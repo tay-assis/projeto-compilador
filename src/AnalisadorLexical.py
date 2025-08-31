@@ -1,4 +1,4 @@
-from Token import Token
+from src.Token import Token
 
 class AnalisadorLexico:
     def __init__(self, caminho_arquivo):
@@ -212,7 +212,7 @@ class AnalisadorLexico:
         for t in self.tokens:
             print(f"{t.lexema:<15} -> {t.simbolo}")
 
-    def salvar_tokens(self, nome_arquivo="tokens.txt"):
+    def salvar_tokens(self, nome_arquivo):
         with open(nome_arquivo, "w", encoding="utf-8") as f:
             for t in self.tokens:
                 f.write(f"{t.lexema:<15} -> {t.simbolo}\n")
