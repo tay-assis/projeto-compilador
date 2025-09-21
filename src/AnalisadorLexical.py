@@ -1,57 +1,40 @@
+from src.Erro import Erro
 from src.Token import Token
 from src.LexicalLib import *
 
 reservadas = {
-    "programa": "PROGRAMA",
-    "var": "VAR",
-    "inteiro": "INTEIRO",
-    "booleano": "BOOLEANO",
-    "procedimento": "PROCEDIMENTO",
-    "funcao": "FUNCAO",
-    "se": "SE",
-    "entao": "ENTAO",
-    "senao": "SENAO",
-    "enquanto": "ENQUANTO",
-    "faca": "FACA",
-    "inicio": "INICIO",
-    "fim": "FIM",
-    "escreva": "ESCREVA",
-    "leia": "LEIA",
-    "div": "DIV",
-    "e": "E",
-    "ou": "OU",
-    "nao": "NAO",
-    "verdadeiro": "VERDADEIRO",
-    "falso": "FALSO",
+    "programa": "sprograma",
+    "var": "svar",
+    "inteiro": "sinteiro",
+    "booleano": "sbooleano",
+    "procedimento": "sprocedimento",
+    "funcao": "sfuncao",
+    "se": "sse",
+    "entao": "sentao",
+    "senao": "ssenao",
+    "enquanto": "senquanto",
+    "faca": "sfaca",
+    "inicio": "sinicio",
+    "fim": "sfim",
+    "escreva": "sescreva",
+    "leia": "sleia",
+    "div": "sdiv",
+    "e": "se",
+    "ou": "sou",
+    "nao": "snao",
+    "verdadeiro": "sverdadeiro",
+    "falso": "sfalso",
 }
 
 
-def AnalisadorLexical(caminho_arquivo, fila_tokens):
+def AnalisadorLexical(caminho_arquivo, fila_tokens,fila_erros):
     with open(caminho_arquivo, "r", encoding="utf-8") as arquivo:
         conteudo = arquivo.read()
         posicao_atual = [0]
         
         while True:
             #ignora espaços e comentarios 
-            while posicao_atual[0] < len(conteudo):
-                c = conteudo[posicao_atual[0]]
-
-                # pula espaços (\n, \t, espaço, etc.)
-                if c.isspace():
-                    posicao_atual[0] += 1
-                    continue
-
-                # comentário { ... }
-                if c == "{":
-                      # consome '{'
-                    while posicao_atual[0] < len(conteudo) and conteudo[posicao_atual[0]] != "}":
-                        posicao_atual[0]+=1
-                      # consome '}'
-                        continue
-
-                # não é espaço nem comentário -> sai
-                break
-            print("saiu pular comentario")
+            pular_comentarios_e_espacos(posicao_atual,conteudo)
 
             if acabou(posicao_atual, conteudo):
                 # EOF -> sinaliza fim e encerra
@@ -89,19 +72,12 @@ def AnalisadorLexical(caminho_arquivo, fila_tokens):
             else:
                 # caractere desconhecido
                 ch = ler_caractere(posicao_atual, conteudo)
-                tok = Token(ch, "ERRO")
+                erro = Erro("ERRO:Caracter desconhecido '"+ch+"'","ERRO LEXICAL")
+                fila_erros.put(erro)
+
                 
 
-            # adiciona token válido ou de erro
+            # adiciona token válido
             if tok:
                 print("[Léxico] Token gerado:", tok.lexema, "->", tok.simbolo)
                 fila_tokens.put(tok)
-            
-
-
-    #def salvar_tokens(self, nome_arquivo):
-           # with open(nome_arquivo, "w", encoding="utf-8") as f:
-              #  for t in tokens:
-               #     f.write(f"{t.lexema:<15} -> {t.simbolo}\n")
-
-           # print(f"Tokens salvos no arquivo {nome_arquivo}")

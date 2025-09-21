@@ -26,7 +26,7 @@ def trata_digito(posicao_atual,conteudo):
                 lex.append(ler_caractere(posicao_atual,conteudo))
             else:
                 break
-        return Token("".join(lex), "NUMERO_INTEIRO")
+        return Token("".join(lex), "sinteiro")
 
 def trata_ident_ou_reservada(posicao_atual,conteudo,reservadas):
         lex = []
@@ -39,7 +39,7 @@ def trata_ident_ou_reservada(posicao_atual,conteudo,reservadas):
                 break
         lexema = "".join(lex)
 
-        simbolo = reservadas.get(lexema, "IDENTIFICADOR")
+        simbolo = reservadas.get(lexema, "sidentificador")
         return Token(lexema, simbolo)
 
 def trata_atribuicao(posicao_atual,conteudo):
@@ -48,17 +48,17 @@ def trata_atribuicao(posicao_atual,conteudo):
         prox = ver_caractere(posicao_atual,conteudo)
         if prox == "=":
             ler_caractere(posicao_atual,conteudo)  # consome '='
-            return Token(":=", "ATRIBUICAO")
+            return Token(":=", "satribuicao")
         
         # apenas ':'
-        return Token(primeiro, "DOIS_PONTOS")
+        return Token(primeiro, "sdoispontos")
 
 def trata_op_aritmetico(posicao_atual,conteudo):
         c = ler_caractere(posicao_atual,conteudo)
         mapa = {
-            "+": "OP_SOMA",
-            "-": "OP_SUB",
-            "*": "OP_MULT",
+            "+": "smais",
+            "-": "smenos",
+            "*": "smult",
         }
         return Token(c, mapa.get(c, "OPERADOR_ARITMETICO"))
 
@@ -69,7 +69,7 @@ def trata_op_relacional(posicao_atual,conteudo):
         if c == "!":
             if prox == "=":
                 ler_caractere(posicao_atual,conteudo)
-                return Token("!=", "OP_DIF")
+                return Token("!=", "sdif")
             
             # '!' sozinho não é válido na gramática
             return Token("!", "ERRO")
@@ -77,18 +77,18 @@ def trata_op_relacional(posicao_atual,conteudo):
         if c == "<":
             if prox == "=":
                 ler_caractere(posicao_atual,conteudo)
-                return Token("<=", "OP_MENOR_IGUAL")
-            return Token("<", "OP_MENOR")
+                return Token("<=", "smenorig")
+            return Token("<", "smenor")
 
         if c == ">":
             if prox == "=":
                 ler_caractere(posicao_atual,conteudo)
-                return Token(">=", "OP_MAIOR_IGUAL")
-            return Token(">", "OP_MAIOR")
+                return Token(">=", "smaiorig")
+            return Token(">", "smaior")
 
         if c == "=":
             # igualdade
-            return Token("=", "OP_IGUAL")
+            return Token("=", "sigual")
 
         # fallback (não deve chegar aqui)
         return Token(c, "ERRO")
@@ -96,10 +96,29 @@ def trata_op_relacional(posicao_atual,conteudo):
 def trata_pontuacao(posicao_atual,conteudo):
         c = ler_caractere(posicao_atual,conteudo)
         mapa = {
-            ";": "PONTO_E_VIRGULA",
-            ",": "VIRGULA",
-            "(": "ABRE_PARENTESE",
-            ")": "FECHA_PARENTESE",
-            ".": "PONTO",
+            ";": "spontovirgula",
+            ",": "svirgula",
+            "(": "sabre_parenteses",
+            ")": "sfecha_parenteses",
+            ".": "sponto",
         }
         return Token(c, mapa.get(c, "PONTUACAO"))
+
+def pular_comentarios_e_espacos(posicao_atual, conteudo):
+    while posicao_atual[0] < len(conteudo):
+        c = conteudo[posicao_atual[0]]
+
+        if c.isspace():
+            posicao_atual[0] += 1
+            continue
+
+        if c == "{":
+            posicao_atual[0] += 1  # consome '{'
+            while posicao_atual[0] < len(conteudo) and conteudo[posicao_atual[0]] != "}":
+                posicao_atual[0] += 1
+            if posicao_atual[0] < len(conteudo):
+                posicao_atual[0] += 1  # consome '}'
+            continue
+
+        # se não é espaço nem comentário, para
+        break
