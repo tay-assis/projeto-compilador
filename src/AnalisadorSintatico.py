@@ -15,7 +15,7 @@ def AnalisadorSintatico(fila_tokens,fila_erros):
 
             if token.simbolo == "sidentificador":
                 # insere nome do programa na tabela de símbolos
-                tabela_simbolos[token.lexema] = {"categoria": "programa", "tipo": None}
+                #tabela_simbolos[token.lexema] = {"categoria": "programa", "tipo": None}
 
                 token = fila_tokens.get()  # consome identificador
 
