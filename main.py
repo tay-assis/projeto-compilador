@@ -3,7 +3,7 @@ from src.AnalisadorSintatico import AnalisadorSintatico
 from multiprocessing import Process, Queue
 
 if __name__ == "__main__":
-    arquivo_input = "exemplos/programa2.txt"
+    arquivo_input = "exemplos/TESTES/sintatico/sint19.txt"
     arquivo_output = "outputs/tokens.txt"
 
     fila_tokens = Queue()
@@ -28,11 +28,11 @@ if __name__ == "__main__":
             print(erro.tipo + "\n")
             print(erro.mensagem)
             
-            while not fila_erros.empty():
-                erro = fila_erros.get_nowait()
-                print("\nOutro erro encontrado:")
-                print(erro.tipo)
-                print(erro.mensagem)
+            #while not fila_erros.empty():
+                #erro = fila_erros.get_nowait()
+                #print("\nOutros erros na fila encontrado:")
+                #print(erro.tipo)
+                #print(erro.mensagem)
             # encerra os dois processos
             
             break  # sai do loop
