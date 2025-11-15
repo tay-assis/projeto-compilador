@@ -8,7 +8,7 @@ def AnalisadorSintatico(fila_tokens,fila_erros):
     token = fila_tokens.get()  # pega o primeiro token
 
     while token is not None:
-        print("[Sintatico] Recebeu:", token)
+        # print("[Sintatico] Recebeu:", token)
 
         if token.simbolo == "sprograma":
             token = fila_tokens.get()  # consome 'programa'
