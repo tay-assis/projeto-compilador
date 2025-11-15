@@ -1,4 +1,5 @@
 from src.SintaticoLib import *
+import src.TabelaSimbolos as TS
 from src.Erro import Erro
 
 def AnalisadorSintatico(fila_tokens,fila_erros):
