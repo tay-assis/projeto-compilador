@@ -1,0 +1,2 @@
+# Ignorar pastas __pycache__ dentro de src
+/src/__pycache__/
