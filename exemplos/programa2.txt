@@ -1,15 +1,15 @@
 programa test; 
 var v: inteiro; 
-i,max, juro,: inteiro; 
+i,max, juro: inteiro; 
 inicio 
-enquanto v != -1 
+enquanto v != -1
     faca 
     inicio 
         {leia o valor  inicial} 
-        leia(v); 
+        leia(v);
         {leia a taxa de juros } 
         leia(juro); 
-        { Leia o periodo }; 
+        { Leia o periodo } 
         leia(max); 
         valor:= 1; 
         i:= 1; 
