@@ -1,5 +1,4 @@
 from src.Erro import Erro
-from src.Token import Token
 from src.LexicalLib import *
 
 reservadas = {
@@ -26,7 +25,6 @@ reservadas = {
     "falso": "sfalso",
 }
 
-
 def AnalisadorLexical(caminho_arquivo, fila_tokens,fila_erros):
     with open(caminho_arquivo, "r", encoding="utf-8") as arquivo:
         conteudo = arquivo.read()
@@ -39,45 +37,37 @@ def AnalisadorLexical(caminho_arquivo, fila_tokens,fila_erros):
             if acabou(posicao_atual, conteudo):
                 # EOF -> sinaliza fim e encerra
                 fila_tokens.put(None)
-                print("[Léxico] Todos os tokens enviados. Fim do processo.")
+                print("[Lexico] Todos os tokens enviados. Fim do processo.")
                 break
 
             c = ver_caractere(posicao_atual, conteudo)
             tok = None
 
             if c.isdigit():
-                tok = trata_digito(posicao_atual, conteudo)
-                
+                tok = trata_digito(posicao_atual, conteudo) 
 
             elif c.isalpha() or c == "_":
                 tok = trata_ident_ou_reservada(posicao_atual, conteudo, reservadas)
                 
-
             elif c == ":":
                 tok = trata_atribuicao(posicao_atual, conteudo)
                 
-
             elif c in "+-*":
                 tok = trata_op_aritmetico(posicao_atual, conteudo)
                 
-
             elif c in "!<=>":
                 tok = trata_op_relacional(posicao_atual, conteudo)
                 
-
             elif c in ";,().":
                 tok = trata_pontuacao(posicao_atual, conteudo)
                 
-
             else:
                 # caractere desconhecido
                 ch = ler_caractere(posicao_atual, conteudo)
                 erro = Erro("ERRO:Caracter desconhecido '"+ch+"'","ERRO LEXICAL")
                 fila_erros.put(erro)
 
-                
-
             # adiciona token válido
             if tok:
-                print("[Léxico] Token gerado:", tok.lexema, "->", tok.simbolo)
+                # print("[Lexico] Token gerado:", tok.lexema, "->", tok.simbolo)
                 fila_tokens.put(tok)

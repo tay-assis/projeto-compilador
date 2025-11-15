@@ -28,11 +28,11 @@ if __name__ == "__main__":
             print(erro.tipo + "\n")
             print(erro.mensagem)
             
-            #while not fila_erros.empty():
-                #erro = fila_erros.get_nowait()
-                #print("\nOutros erros na fila encontrado:")
-                #print(erro.tipo)
-                #print(erro.mensagem)
+            # while not fila_erros.empty():
+            #     erro = fila_erros.get_nowait()
+            #     print("\nOutros erros na fila encontrado:")
+            #     print(erro.tipo)
+            #     print(erro.mensagem)
             # encerra os dois processos
             
             break  # sai do loop
@@ -40,9 +40,9 @@ if __name__ == "__main__":
             # Nenhum erro no momento
             if not p_lex.is_alive() and not p_syn.is_alive():
                 # ambos os processos terminaram sem erros
-                print("Processos concluídos sem erros.")
+                print("Processos concluidos sem erros.")
                 break
 
     # Aguarda finalização
-    #p_lex.join()
-   # p_syn.join()
+    # p_lex.join()
+    # p_syn.join()

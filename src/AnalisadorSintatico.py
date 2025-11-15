@@ -2,12 +2,12 @@ from src.SintaticoLib import *
 from src.Erro import Erro
 
 def AnalisadorSintatico(fila_tokens,fila_erros):
-    print("[Sintático] Iniciado, aguardando tokens...")
+    print("[Sintatico] Iniciado, aguardando tokens...")
 
     token = fila_tokens.get()  # pega o primeiro token
 
     while token is not None:
-        print("[Sintático] Recebeu:", token)
+        print("[Sintatico] Recebeu:", token)
 
         if token.simbolo == "sprograma":
             token = fila_tokens.get()  # consome 'programa'
@@ -26,7 +26,7 @@ def AnalisadorSintatico(fila_tokens,fila_erros):
                         token = fila_tokens.get()  # consome '.'
 
                         if token is None:
-                            print("[Sintático] Fim dos tokens. Encerrando.")
+                            print("[Sintatico] Fim dos tokens. Encerrando.")
                             break
                         else:
                             erro = Erro("ERRO:tokens extras após '.'","ERRO SINTATICO")
@@ -45,12 +45,3 @@ def AnalisadorSintatico(fila_tokens,fila_erros):
             erro = Erro("ERRO:esperado identificador  'programa'","ERRO SINTATICO")
             fila_erros.put(erro)
             break
-
-
-
-            
-                
-
-
-        
-        
