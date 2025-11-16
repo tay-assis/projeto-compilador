@@ -13,8 +13,8 @@ topo = -1
 # Nível léxico atual (0 = programa)
 nivel_atual = -1   # começa em -1; ao abrir programa deve chamar enter_scope() para nivel 0
 
-# Controle de endereçamento por nível: endereco (offset) cresce conforme variáveis inseridas
-enderecos_por_nivel = {}  # dict: nivel -> proximo_offset (int)
+# Endereço global
+endereco_global = 0
 
 # Contador de rótulos (para geração de código)
 _rotulo_counter = 0
@@ -31,17 +31,17 @@ def novo_rotulo():
     print(f"[TabelaSimbolos] Novo rotulo criado: {rot}")
     return rot
 
-def iniciar_enderecamento_para_nivel(nivel):
-    """Inicializa o contador de endereços para um nível (se ainda não existir)."""
-    if nivel not in enderecos_por_nivel:
-        enderecos_por_nivel[nivel] = 0
-        print(f"[TabelaSimbolos] Enderecamento iniciado para nivel {nivel} (offset=0)")
+# def iniciar_enderecamento_para_nivel(nivel):
+#     """Inicializa o contador de endereços para um nível (se ainda não existir)."""
+#     if nivel not in enderecos_por_nivel:
+#         enderecos_por_nivel[nivel] = 0
+#         print(f"[TabelaSimbolos] Enderecamento iniciado para nivel {nivel} (offset=0)")
 
-def liberar_enderecamento_nivel(nivel):
-    """Remove contador de endereços de um nível (quando fechar o escopo)."""
-    if nivel in enderecos_por_nivel:
-        del enderecos_por_nivel[nivel]
-        print(f"[TabelaSimbolos] Enderecamento removido para nivel {nivel}")
+# def liberar_enderecamento_nivel(nivel):
+#     """Remove contador de endereços de um nível (quando fechar o escopo)."""
+#     if nivel in enderecos_por_nivel:
+#         del enderecos_por_nivel[nivel]
+#         print(f"[TabelaSimbolos] Enderecamento removido para nivel {nivel}")
 
 
 # ===========================
@@ -49,11 +49,11 @@ def liberar_enderecamento_nivel(nivel):
 # ===========================
 def resetar_tabela():
     """Limpa a tabela e reseta contadores. Deve ser chamado no início da compilação."""
-    global tabela_simbolos, topo, nivel_atual, enderecos_por_nivel, _rotulo_counter
+    global tabela_simbolos, topo, nivel_atual, endereco_global, _rotulo_counter
     tabela_simbolos.clear()
     topo = -1
     nivel_atual = -1
-    enderecos_por_nivel = {}
+    endereco_global = 0
     _rotulo_counter = 0
     print("[TabelaSimbolos] Tabela reiniciada.")
 
@@ -71,7 +71,6 @@ def enter_scope():
     """
     global nivel_atual
     nivel_atual += 1
-    iniciar_enderecamento_para_nivel(nivel_atual)
     push_marcador(nivel_atual)
     print(f"[TabelaSimbolos] Entrou em escopo, nivel_atual={nivel_atual}")
     return nivel_atual
@@ -87,7 +86,6 @@ def exit_scope():
     global nivel_atual
     nivel_fechado = nivel_atual
     fechar_escopo()
-    liberar_enderecamento_nivel(nivel_fechado)
     nivel_atual -= 1
     print(f"[TabelaSimbolos] Saiu do escopo, novo nivel_atual={nivel_atual}")
     return nivel_fechado
@@ -106,19 +104,15 @@ def insere_tabela(lexema, categoria, tipo=None, nivel=None, info=None):
     - info: se categoria == "variavel" -> será calculado como offset no nivel;
             se categoria in ["procedimento","funcao"] e info is None -> atribui rótulo automaticamente.
     """
-    global topo, tabela_simbolos, nivel_atual
+    global topo, tabela_simbolos, nivel_atual, endereco_global
 
     if nivel is None:
         nivel = nivel_atual
 
     # Variáveis recebem endereço (offset) por nível
     if categoria == "variavel":
-        # if nivel is None:
-        #     raise RuntimeError("insere_tabela: nivel é None ao inserir variável")
-        iniciar_enderecamento_para_nivel(nivel)
-        endereco = enderecos_por_nivel[nivel]
-        info = endereco
-        enderecos_por_nivel[nivel] += 1
+        info = endereco_global
+        endereco_global += 1
         print(f"[TabelaSimbolos] Atribuido endereco {info} para variavel '{lexema}' no nivel {nivel}")
 
     # Procedimento/Função recebem rótulo se não fornecido
