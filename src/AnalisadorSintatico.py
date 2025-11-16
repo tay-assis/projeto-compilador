@@ -4,6 +4,9 @@ from src.Erro import Erro
 
 def AnalisadorSintatico(fila_tokens,fila_erros):
     print("[Sintatico] Iniciado, aguardando tokens...")
+    
+    # Reseta a tabela de símbolos
+    TS.resetar_tabela()
 
     token = fila_tokens.get()  # pega o primeiro token
 
@@ -11,17 +14,24 @@ def AnalisadorSintatico(fila_tokens,fila_erros):
         # print("[Sintatico] Recebeu:", token)
 
         if token.simbolo == "sprograma":
+
             token = fila_tokens.get()  # consome 'programa'
 
             if token.simbolo == "sidentificador":
 
+                # Insere o nome do programa na tabela de símbolos
+                TS.insere_tabela(token.lexema, "nomedeprograma", tipo=None, nivel=None, info=None)
+
+                # Inicio o escopo do programa
+                TS.enter_scope() # nível 0
+                
                 token = fila_tokens.get()  # consome identificador
 
                 if token.simbolo == "spontovirgula":
                     token = fila_tokens.get()  # consome ';'
 
                     # Analisa o bloco do programa
-                    token = Analisa_bloco(token, fila_tokens,fila_erros)
+                    token = Analisa_bloco(token, fila_tokens, fila_erros)
 
                     if token is not None and token.simbolo == "sponto":
                         token = fila_tokens.get()  # consome '.'

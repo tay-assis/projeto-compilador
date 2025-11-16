@@ -28,26 +28,38 @@ def Analisa_et_variaveis(token, fila_tokens,fila_erros):
 
 
 def Analisa_Variaveis(token, fila_tokens, fila_erros):
+    # lista temporária para armazenar variáveis do mesmo tipo
+    lista_var = []
+    
     while True:
         if token.simbolo == "sidentificador":
             
-            token = fila_tokens.get()  # consome identificador
-            # print("[Sintatico] Recebeu:", token)
+            if not TS.pesquisa_declvar_tabela(token.lexema):
+                lista_var.append(token.lexema)
+                
+                TS.insere_tabela(token.lexema, "variavel", tipo=None, nivel=None, info=None)
+            
+                token = fila_tokens.get()  # consome identificador
+                # print("[Sintatico] Recebeu:", token)
 
-            if token.simbolo == "svirgula" or token.simbolo == "sdoispontos":
-                if token.simbolo == "svirgula":
-                    token = fila_tokens.get()  # consome próximo
-                    # print("[Sintatico] Recebeu:", token)
-                    if token.simbolo == "sdoispontos":
-                        erro = Erro("ERRO: ':' inesperado após ','", "ERRO SINTATICO")
-                        fila_erros.put(erro)
+                if token.simbolo == "svirgula" or token.simbolo == "sdoispontos":
+                    if token.simbolo == "svirgula":
+                        token = fila_tokens.get()  # consome próximo
+                        # print("[Sintatico] Recebeu:", token)
+                        if token.simbolo == "sdoispontos":
+                            erro = Erro("ERRO: ':' inesperado após ','", "ERRO SINTATICO")
+                            fila_erros.put(erro)
+                            break
+                        # senão, continua o loop, esperando próximo identificador
+                    else:
+                        # encontrou dois pontos → sai do loop
                         break
-                    # senão, continua o loop, esperando próximo identificador
                 else:
-                    # encontrou dois pontos → sai do loop
+                    erro = Erro("ERRO: ',' ou ':' esperado", "ERRO SINTATICO")
+                    fila_erros.put(erro)
                     break
             else:
-                erro = Erro("ERRO: ',' ou ':' esperado", "ERRO SINTATICO")
+                erro = Erro(f"ERRO: variável '{token.lexema}' já declarada neste bloco", "ERRO SEMANTICO")
                 fila_erros.put(erro)
                 break
         else:
@@ -63,7 +75,13 @@ def Analisa_Variaveis(token, fila_tokens, fila_erros):
     if token.simbolo == "sdoispontos":
         token = fila_tokens.get()
         # print("[Sintatico] Recebeu:", token)
-        token = Analisa_Tipo(token, fila_tokens, fila_erros)
+        
+        # print("\n",lista_var, "\n")
+        
+        token = Analisa_Tipo(token, fila_tokens, fila_erros, lista_var)
+
+        TS.imprimir_tabela()
+
     else:
         erro = Erro("ERRO: ':' esperado", "ERRO SINTATICO")
         fila_erros.put(erro)
@@ -71,10 +89,16 @@ def Analisa_Variaveis(token, fila_tokens, fila_erros):
     return token
 
 
-def Analisa_Tipo(token, fila_tokens,fila_erros):
+def Analisa_Tipo(token, fila_tokens,fila_erros, lista_var):
     if token.simbolo != "sinteiro" and token.simbolo != "sbooleano":
         erro = Erro("ERRO: tipo da variavel não reconhecido","ERRO SINTATICO")
         fila_erros.put(erro)
+    
+    print("[Sintatico] Atribuindo tipo", token.lexema, "as variaveis:", lista_var)
+
+    # Atribuindo o tipo para as variáveis declaradas
+    TS.atribuir_tipo_variaveis(lista_var, token.lexema)
+    
     token = fila_tokens.get()
     # print("[Sintatico] Recebeu:", token)
     return token
@@ -140,14 +164,22 @@ def Analisa_leia(token, fila_tokens,fila_erros):
         token = fila_tokens.get()
         # print("[Sintatico] Recebeu:", token)
         if token.simbolo == "sidentificador":
-            token = fila_tokens.get()
-            # print("[Sintatico] Recebeu:", token)
-            if token.simbolo == "sfecha_parenteses":
-                    token = fila_tokens.get()  # consome o ')'
-                    # print("[Sintatico] Recebeu :", token)
+            # Verifica se a variável foi declarada no escopo atual ou em escopos superiores
+            if TS.pesquisa_declvar_tabela(token.lexema):
+                # Pesquisa em toda a tabela
+                TS.pesquisa_tabela(token.lexema)  # marca como usada
+                
+                token = fila_tokens.get()
+                # print("[Sintatico] Recebeu:", token)
+                if token.simbolo == "sfecha_parenteses":
+                        token = fila_tokens.get()  # consome o ')'
+                        # print("[Sintatico] Recebeu :", token)
+                else:
+                        erro = Erro("ERRO:esperado ')' após identificador","ERRO SINTATICO")
+                        fila_erros.put(erro)
             else:
-                    erro = Erro("ERRO:esperado ')' após identificador","ERRO SINTATICO")
-                    fila_erros.put(erro)
+                erro = Erro(f"ERRO: variável '{token.lexema}' não declarada","ERRO SEMANTICO")
+                fila_erros.put(erro)
         else:
             erro = Erro("ERRO:esperado identificador após '('","ERRO SINTATICO")
             fila_erros.put(erro)
