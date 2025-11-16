@@ -164,11 +164,9 @@ def Analisa_leia(token, fila_tokens,fila_erros):
         token = fila_tokens.get()
         # print("[Sintatico] Recebeu:", token)
         if token.simbolo == "sidentificador":
-            # Verifica se a variável foi declarada no escopo atual ou em escopos superiores
+            # Verifica se a variável foi declarada até o marcador
             if TS.pesquisa_declvar_tabela(token.lexema):
-                # Pesquisa em toda a tabela
-                TS.pesquisa_tabela(token.lexema)  # marca como usada
-                
+
                 token = fila_tokens.get()
                 # print("[Sintatico] Recebeu:", token)
                 if token.simbolo == "sfecha_parenteses":
@@ -199,16 +197,20 @@ def Analisa_escreva(token, fila_tokens,fila_erros):
         # print("[Sintatico] Recebeu:", token)
 
         if token.simbolo == "sidentificador":
-            token = fila_tokens.get()
-            # print("[Sintatico] Recebeu:", token)
-            if token.simbolo == "sfecha_parenteses":
-                token = fila_tokens.get()  # consome o ')'
+            if TS.pesquisa_declvar_tabela(token.lexema):    
+                token = fila_tokens.get()
                 # print("[Sintatico] Recebeu:", token)
+                if token.simbolo == "sfecha_parenteses":
+                    token = fila_tokens.get()  # consome o ')'
+                    # print("[Sintatico] Recebeu:", token)
+                else:
+                    erro = Erro("ERRO:Erro: esperado ')' após identificador em 'escreva'","ERRO SINTATICO")
+                    fila_erros.put(erro)
             else:
-                erro = Erro("ERRO:Erro: esperado ')' após identificador em 'escreva'","ERRO SINTATICO")
+                erro = Erro(f"ERRO: variavel '{token.lexema}' nao declarada","ERRO SEMANTICO")
                 fila_erros.put(erro)
         else:
-            erro = Erro("ERRO:esperado identificador após '(' em 'escreva'","ERRO SINTATICO")
+            erro = Erro("ERRO:esperado identificador apos '(' em 'escreva'","ERRO SINTATICO")
             fila_erros.put(erro) 
     else:
         erro = Erro("ERRO: esperado '(' após 'escreva'","ERRO SINTATICO")
