@@ -113,7 +113,7 @@ def insere_tabela(lexema, categoria, tipo=None, nivel=None, info=None):
     if categoria == "variavel":
         info = endereco_global
         endereco_global += 1
-        print(f"[TabelaSimbolos] Atribuido endereco {info} para variavel '{lexema}' no nivel {nivel}")
+        print(f"[Semantico] Atribuido endereco {info} para variavel '{lexema}' no nivel {nivel}")
 
     # Procedimento/Função recebem rótulo se não fornecido
     if categoria in ("procedimento", "funcao"):
@@ -189,34 +189,30 @@ def pesquisa_declvar_tabela(lexema):
         if simbolo["categoria"] == "marcador":
             return False
         if simbolo["lexema"] == lexema and simbolo["categoria"] == "variavel":
-            print(f"[TabelaSimbolos] pesquisa_declvar_tabela: '{lexema}' ja declarado neste bloco.")
+            print(f"[Semantico] pesquisa_declvar_tabela: '{lexema}' ja declarado neste bloco.")
             return True
     return False
 
 
 def pesquisa_declproc_tabela(lexema):
     """
-    - Pesquisa se procedimento já foi declarado no nível 0 (programa).
-    - Retorna True se já existe.
+    - Procura se um procedimento já foi declarado.
     """
-    for simbolo in tabela_simbolos:
-        if simbolo["nivel"] == 0 and simbolo["categoria"] == "procedimento":
-            if simbolo["lexema"] == lexema:
-                print(f"[TabelaSimbolos] pesquisa_declproc_tabela: procedimento '{lexema}' ja declarado.")
-                return True
+    for simbolo in reversed(tabela_simbolos):
+        if simbolo["lexema"] == lexema and simbolo["categoria"] == "procedimento":
+            print(f"[TS] procedimento '{lexema}' já declarado neste bloco.")
+            return True
     return False
 
 
 def pesquisa_declfunc_tabela(lexema):
     """
-    - Pesquisa se função já foi declarada no nível 0 (programa).
-    - Retorna True se já existe.
+    - Procura se uma função já foi declarada.
     """
-    for simbolo in tabela_simbolos:
-        if simbolo["nivel"] == 0 and simbolo["categoria"] == "funcao":
-            if simbolo["lexema"] == lexema:
-                print(f"[TabelaSimbolos] pesquisa_declfunc_tabela: funcao '{lexema}' ja declarada.")
-                return True
+    for simbolo in reversed(tabela_simbolos):
+        if simbolo["lexema"] == lexema and simbolo["categoria"] == "funcao":
+            print(f"[Semantico] funcao '{lexema}' ja declarada neste bloco.")
+            return True
     return False
 
 
@@ -229,10 +225,21 @@ def pesquisa_tabela(lexema):
     """
     for simbolo in reversed(tabela_simbolos):
         if simbolo["lexema"] == lexema:
-            print(f"[TabelaSimbolos] pesquisa_tabela: encontrado {simbolo}")
+            print(f"[Semantico] pesquisa_tabela: encontrado {simbolo}")
             return simbolo
-    print(f"[TabelaSimbolos] pesquisa_tabela: '{lexema}' nao encontrado.")
+    print(f"[Semantico] pesquisa_tabela: '{lexema}' nao encontrado.")
     return None
+
+def pesquisa_var_tabela_inteira(lexema):
+    """
+    - Pesquisa se lexema foi declarado como variável em qualquer escopo.
+    - Retorna True se declarado, False caso contrário.
+    """
+    for simbolo in reversed(tabela_simbolos):
+        if simbolo["lexema"] == lexema and simbolo["categoria"] == "variavel":
+            print(f"[Semantico] pesquisa_var_tabela_inteira: '{lexema}' ja declarado.")
+            return True
+    return False
 
 
 # ===========================
@@ -250,11 +257,11 @@ def atribuir_tipo_variaveis(lista_vars, tipo):
         for simbolo in reversed(tabela_simbolos):
             if simbolo["lexema"] == var and simbolo["categoria"] == "variavel":
                 simbolo["tipo"] = tipo
-                print(f"[TabelaSimbolos] Tipo de '{var}' atualizado para '{tipo}'")
+                print(f"[Semantico] Tipo de '{var}' atualizado para '{tipo}'")
                 atualizado = True
                 break
         if not atualizado:
-            print(f"[TabelaSimbolos] AVISO: variavel '{var}' nao encontrada para atribuir tipo '{tipo}'.")
+            print(f"[Semantico] AVISO: variavel '{var}' nao encontrada para atribuir tipo '{tipo}'.")
 
 
 def insere_tipo(lexema, tipo):
@@ -264,9 +271,9 @@ def insere_tipo(lexema, tipo):
     for simbolo in reversed(tabela_simbolos):
         if simbolo["lexema"] == lexema:
             simbolo["tipo"] = tipo
-            print(f"[TabelaSimbolos] insere_tipo: tipo atualizado: {simbolo}")
+            print(f"[Semantico] insere_tipo: tipo atualizado: {simbolo}")
             return
-    print(f"[TabelaSimbolos] insere_tipo: simbolo '{lexema}' nao encontrado.")
+    print(f"[Semantico] insere_tipo: simbolo '{lexema}' nao encontrado.")
 
 
 # ===========================

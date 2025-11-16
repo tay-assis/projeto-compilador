@@ -34,7 +34,7 @@ def Analisa_Variaveis(token, fila_tokens, fila_erros):
     while True:
         if token.simbolo == "sidentificador":
             
-            if not TS.pesquisa_declvar_tabela(token.lexema):
+            if not TS.pesquisa_declvar_tabela(token.lexema) or not TS.pesquisa_var_tabela_inteira(token.lexema):
                 lista_var.append(token.lexema)
                 
                 TS.insere_tabela(token.lexema, "variavel", tipo=None, nivel=None, info=None)
@@ -94,7 +94,7 @@ def Analisa_Tipo(token, fila_tokens,fila_erros, lista_var):
         erro = Erro("ERRO: tipo da variavel não reconhecido","ERRO SINTATICO")
         fila_erros.put(erro)
     
-    print("[Sintatico] Atribuindo tipo", token.lexema, "as variaveis:", lista_var)
+    # print("[Semantico] Atribuindo tipo", token.lexema, "as variaveis:", lista_var)
 
     # Atribuindo o tipo para as variáveis declaradas
     TS.atribuir_tipo_variaveis(lista_var, token.lexema)
@@ -165,7 +165,7 @@ def Analisa_leia(token, fila_tokens,fila_erros):
         # print("[Sintatico] Recebeu:", token)
         if token.simbolo == "sidentificador":
             # Verifica se a variável foi declarada até o marcador
-            if TS.pesquisa_declvar_tabela(token.lexema):
+            if TS.pesquisa_var_tabela_inteira(token.lexema):
 
                 token = fila_tokens.get()
                 # print("[Sintatico] Recebeu:", token)
@@ -197,7 +197,7 @@ def Analisa_escreva(token, fila_tokens,fila_erros):
         # print("[Sintatico] Recebeu:", token)
 
         if token.simbolo == "sidentificador":
-            if TS.pesquisa_declvar_tabela(token.lexema):    
+            if TS.pesquisa_var_tabela_inteira(token.lexema):    
                 token = fila_tokens.get()
                 # print("[Sintatico] Recebeu:", token)
                 if token.simbolo == "sfecha_parenteses":
@@ -266,9 +266,6 @@ def Analisa_declaracao_procedimento(token, fila_tokens,fila_erros):
     if token.simbolo == "sidentificador":
         if not TS.pesquisa_declproc_tabela(token.lexema):
 
-            # # Gera um novo rótulo para o procedimento
-            # rotulo = TS.novo_rotulo()
-
             # Insere o procedimento na tabela de símbolos
             TS.insere_tabela(token.lexema, "procedimento", tipo=None, nivel=None, info=None)
 
@@ -326,33 +323,58 @@ def Analisa_declaracao_funcao(token, fila_tokens,fila_erros):
     # print("[Sintatico] Recebeu:", token)
 
     if token.simbolo == "sidentificador":
-        token = fila_tokens.get()
-        # print("[Sintatico] Recebeu:", token)
+        # Armazena o nome da função
+        iden = token.lexema
 
-        # Espera ':' 
-        if token.simbolo == "sdoispontos":
+        if not TS.pesquisa_declfunc_tabela(token.lexema):
+            # Insere a função na tabela de símbolos
+            TS.insere_tabela(token.lexema, "funcao", tipo=None, nivel=None, info=None)
+
+            # Entra em um novo escopo (gera a marca e incrementa o escopo)
+            TS.enter_scope()
+
             token = fila_tokens.get()
             # print("[Sintatico] Recebeu:", token)
-            # Próximo token
-            token = fila_tokens.get()
-            # print("[Sintatico] Recebeu:", token)
 
-            # Espera ';'
-            if token.simbolo == "spontovirgula":
+            # Espera ':' 
+            if token.simbolo == "sdoispontos":
                 token = fila_tokens.get()
                 # print("[Sintatico] Recebeu:", token)
-                # Chama o bloco da função
-                token = Analisa_bloco(token, fila_tokens,fila_erros)
+
+                if token.simbolo == "sinteiro" or token.simbolo == "sbooleano":
+                    # Atribui o tipo de retorno da função na tabela de símbolos
+                    if token.simbolo == "sinteiro":
+                        # Tipo inteiro
+                        TS.insere_tipo(iden, token.lexema)
+                    else:
+                        # Tipo booleano
+                        TS.insere_tipo(iden, token.lexema)
+                    
+                    token = fila_tokens.get()
+                    # Espera ';'
+                    if token.simbolo == "spontovirgula":
+                        token = fila_tokens.get()
+                        # print("[Sintatico] Recebeu:", token)
+                        # Chama o bloco da função
+                        token = Analisa_bloco(token, fila_tokens,fila_erros)
+                    else:
+                        erro = Erro("ERRO:esperado ';' após declaração de função","ERRO SINTATICO")
+                        fila_erros.put(erro)
+                else:
+                    erro = Erro("ERRO:tipo de retorno da funcao nao reconhecido","ERRO SINTATICO")
+                    fila_erros.put(erro)
             else:
-                erro = Erro("ERRO:esperado ';' após declaração de função","ERRO SINTATICO")
+                erro = Erro("ERRO:esperado ':' após identificador da função","ERRO SINTATICO")
                 fila_erros.put(erro)
         else:
-            erro = Erro("ERRO:esperado ':' após identificador da função","ERRO SINTATICO")
+            erro = Erro(f"ERRO: funcao '{token.lexema}' ja declarada","ERRO SEMANTICO")
             fila_erros.put(erro)
     else:
         erro = Erro("ERRO: esperado identificador após 'funcao'","ERRO SINTATICO")
         fila_erros.put(erro)
 
+    # Fim da função: sai do escopo
+    TS.exit_scope()
     return token
 
 def Analisa_expressao(token, fila_tokens,fila_erros):
@@ -397,7 +419,7 @@ def Analisa_termo(token, fila_tokens,fila_erros):
     return token
 
 def Analisa_fator(token, fila_tokens,fila_erros):
-    # Variável
+    # Variável ou funcao
     if token.simbolo == "sidentificador":
         token = fila_tokens.get()
         # print("[Sintatico] Recebeu:", token)
