@@ -23,7 +23,7 @@ _rotulo_counter = 0
 # Funções utilitárias
 # ===========================
 
-def _novo_rotulo():
+def novo_rotulo():
     """Gera e retorna um novo rótulo (string)."""
     global _rotulo_counter
     _rotulo_counter += 1
@@ -124,7 +124,7 @@ def insere_tabela(lexema, categoria, tipo=None, nivel=None, info=None):
     # Procedimento/Função recebem rótulo se não fornecido
     if categoria in ("procedimento", "funcao"):
         if info is None:
-            info = _novo_rotulo()
+            info = novo_rotulo()
 
     simbolo = {
         "lexema": lexema,

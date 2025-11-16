@@ -176,7 +176,7 @@ def Analisa_leia(token, fila_tokens,fila_erros):
                         erro = Erro("ERRO:esperado ')' após identificador","ERRO SINTATICO")
                         fila_erros.put(erro)
             else:
-                erro = Erro(f"ERRO: variável '{token.lexema}' não declarada","ERRO SEMANTICO")
+                erro = Erro(f"ERRO: variavel '{token.lexema}' não declarada","ERRO SEMANTICO")
                 fila_erros.put(erro)
         else:
             erro = Erro("ERRO:esperado identificador após '('","ERRO SINTATICO")
@@ -264,22 +264,42 @@ def Analisa_declaracao_procedimento(token, fila_tokens,fila_erros):
     # print("[Sintatico] Recebeu:", token)
 
     if token.simbolo == "sidentificador":
-        # consome o identificador
-        token = fila_tokens.get()
-        # print("[Sintatico] Recebeu:", token)
-        if token.simbolo == "spontovirgula":
-            # consome o ponto e vírgula
+        if not TS.pesquisa_declproc_tabela(token.lexema):
+
+            # # Gera um novo rótulo para o procedimento
+            # rotulo = TS.novo_rotulo()
+
+            # Insere o procedimento na tabela de símbolos
+            TS.insere_tabela(token.lexema, "procedimento", tipo=None, nivel=None, info=None)
+
+            # Entra em um novo escopo (gera a marca e incrementa o escopo)
+            TS.enter_scope()
+
+            # GERA ROTULO DO PROCEDIMENTO NO CODIGO OBJETO
+            # Gera(rotulo,...)
+            # rotulo += 1
+            
+            # consome o identificador
             token = fila_tokens.get()
             # print("[Sintatico] Recebeu:", token)
-            # analisa o bloco do procedimento
-            token = Analisa_bloco(token, fila_tokens,fila_erros)
+            if token.simbolo == "spontovirgula":
+                # consome o ponto e vírgula
+                token = fila_tokens.get()
+                # print("[Sintatico] Recebeu:", token)
+                # analisa o bloco do procedimento
+                token = Analisa_bloco(token, fila_tokens,fila_erros)
+            else:
+                erro = Erro("ERRO:esperado ';' após nome do procedimento","ERRO SINTATICO")
+                fila_erros.put(erro)
         else:
-            erro = Erro("ERRO:esperado ';' após nome do procedimento","ERRO SINTATICO")
+            erro = Erro(f"ERRO: procedimento '{token.lexema}' ja declarado","ERRO SEMANTICO")
             fila_erros.put(erro)
     else:
         erro = Erro("ERRO:esperado identificador após 'procedimento'","ERRO SINTATICO")
         fila_erros.put(erro)
 
+    # Fim do procedimento: sai do escopo
+    TS.exit_scope()
     return token
 
 def Analisa_subrotinas(token, fila_tokens,fila_erros):
