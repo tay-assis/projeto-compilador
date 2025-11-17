@@ -230,14 +230,16 @@ def pesquisa_tabela(lexema):
     print(f"[Semantico] pesquisa_tabela: '{lexema}' nao encontrado.")
     return None
 
-def pesquisa_var_tabela_inteira(lexema):
+def pesquisa_var_func_tabela_inteira(lexema):
     """
-    - Pesquisa se lexema foi declarado como variável em qualquer escopo.
+    - Pesquisa se lexema foi declarado como variável e função em qualquer escopo.
     - Retorna True se declarado, False caso contrário.
     """
     for simbolo in reversed(tabela_simbolos):
         if simbolo["lexema"] == lexema and simbolo["categoria"] == "variavel":
             print(f"[Semantico] pesquisa_var_tabela_inteira: '{lexema}' ja declarado.")
+            return True
+        if simbolo["lexema"] == lexema and simbolo["categoria"] != "funcao":
             return True
     return False
 
@@ -274,6 +276,22 @@ def insere_tipo(lexema, tipo):
             print(f"[Semantico] insere_tipo: tipo atualizado: {simbolo}")
             return
     print(f"[Semantico] insere_tipo: simbolo '{lexema}' nao encontrado.")
+
+def verifica_tipo(lexema, tipo_esperado):
+    """
+    Verifica se o símbolo com o lexema dado tem o tipo esperado.
+    Retorna True se o tipo confere, False caso contrário.
+    """
+    simbolo = pesquisa_tabela(lexema)
+    if simbolo is None:
+        print(f"[Semantico] verifica_tipo: simbolo '{lexema}' nao encontrado.")
+        return False
+    if simbolo["tipo"] == tipo_esperado:
+        print(f"[Semantico] verifica_tipo: tipo de '{lexema}' confere com '{tipo_esperado}'.")
+        return True
+    else:
+        print(f"[Semantico] verifica_tipo: tipo de '{lexema}' ('{simbolo['tipo']}') NAO confere com '{tipo_esperado}'.")
+        return False
 
 
 # ===========================
