@@ -165,7 +165,7 @@ def Analisa_leia(token, fila_tokens,fila_erros):
         # print("[Sintatico] Recebeu:", token)
         if token.simbolo == "sidentificador":
             # Verifica se a variável foi declarada até o marcador
-            if TS.pesquisa_var_tabela_inteira(token.lexema):
+            if TS.pesquisa_var_func_tabela_inteira(token.lexema):
 
                 token = fila_tokens.get()
                 # print("[Sintatico] Recebeu:", token)
@@ -197,7 +197,7 @@ def Analisa_escreva(token, fila_tokens,fila_erros):
         # print("[Sintatico] Recebeu:", token)
 
         if token.simbolo == "sidentificador":
-            if TS.pesquisa_var_tabela_inteira(token.lexema):    
+            if TS.pesquisa_var_func_tabela_inteira(token.lexema):    
                 token = fila_tokens.get()
                 # print("[Sintatico] Recebeu:", token)
                 if token.simbolo == "sfecha_parenteses":
