@@ -434,7 +434,7 @@ def Analisa_fator(token, fila_tokens,fila_erros):
             fila_erros.put(erro)
     else: 
         # É numero -> inteiro
-        if token.simbolo == "sinteiro":
+        if token.simbolo == "snumero":
             token = fila_tokens.get()
             # print("[Sintatico] Recebeu:", token)
         else:
@@ -446,7 +446,9 @@ def Analisa_fator(token, fila_tokens,fila_erros):
             else:
                 # É expressão entre parênteses
                 if token.simbolo == "sabre_parenteses":
+                    print("\n",token.lexema, token.simbolo,"\n")
                     token = fila_tokens.get()
+                    print("\n",token.lexema, token.simbolo,"\n")
                     # print("[Sintatico] Recebeu:", token)
                     token = Analisa_expressao(token, fila_tokens,fila_erros)
                     if token.simbolo == "sfecha_parenteses":

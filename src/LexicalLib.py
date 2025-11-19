@@ -26,7 +26,7 @@ def trata_digito(posicao_atual,conteudo):
                 lex.append(ler_caractere(posicao_atual,conteudo))
             else:
                 break
-        return Token("".join(lex), "sinteiro")
+        return Token("".join(lex), "snumero")
 
 def trata_ident_ou_reservada(posicao_atual,conteudo,reservadas):
         lex = []
