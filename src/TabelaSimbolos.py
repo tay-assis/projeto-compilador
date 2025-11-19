@@ -292,6 +292,15 @@ def verifica_tipo(lexema, tipo_esperado):
     else:
         print(f"[Semantico] verifica_tipo: tipo de '{lexema}' ('{simbolo['tipo']}') NAO confere com '{tipo_esperado}'.")
         return False
+    
+def get_categoria(lexema):
+    """
+    Retorna a categoria do símbolo com o lexema dado, ou None se não encontrado.
+    """
+    simbolo = pesquisa_tabela(lexema)
+    if simbolo is not None:
+        return simbolo["categoria"]
+    return None
 
 
 # ===========================

@@ -152,8 +152,7 @@ def Analisa_atrib_chprocedimento(token,fila_tokens,fila_erros):
     if token.simbolo == "satribuicao":
         token = Analisa_atribuicao(token,fila_tokens,fila_erros)
     else:
-        return token
-        #token = Chamada_procedimento(token,fila_tokens,fila_erros)
+        token = Chamada_procedimento(token,fila_tokens,fila_erros)
     return token
 
 def Analisa_leia(token, fila_tokens,fila_erros):
@@ -420,39 +419,49 @@ def Analisa_termo(token, fila_tokens,fila_erros):
 
 def Analisa_fator(token, fila_tokens,fila_erros):
     # Variável ou funcao
-    if token.simbolo == "sidentificador":
-        token = fila_tokens.get()
-        # print("[Sintatico] Recebeu:", token)
-    # Número
-    elif token.simbolo == "sinteiro":
-        token = fila_tokens.get()
-        # print("[Sintatico] Recebeu:", token)
-    # Não
-    elif token.simbolo == "snao":
-        token = fila_tokens.get()
-        # print("[Sintatico] Recebeu:", token)
-        token = Analisa_fator(token, fila_tokens,fila_erros)
-
-    # Parênteses
-    elif token.simbolo == "sabre_parenteses":
-        token = fila_tokens.get()
-        # print("[Sintatico] Recebeu:", token)
-        token = Analisa_expressao(token, fila_tokens,fila_erros)
-        if token.simbolo == "sfecha_parenteses":
+    if token.simbolo == "sidentificador": # (Variável ou função)
+        # Verifica se é uma função ou variável
+        if TS.pesquisa_tabela(token.lexema):
+            if TS.get_categoria(token.lexema) == "funcao": # Verifica se é função
+                # token = Analisa_chamada_funcao(token, fila_tokens,fila_erros)
+                token = fila_tokens.get()
+            else:
+                # É variável
+                token = fila_tokens.get()
+                # print("[Sintatico] Recebeu:", token)
+        else:
+            erro = Erro(f"ERRO: identificador '{token.lexema}' nao declarado","ERRO SEMANTICO")
+            fila_erros.put(erro)
+    else: 
+        # É numero -> inteiro
+        if token.simbolo == "sinteiro":
             token = fila_tokens.get()
             # print("[Sintatico] Recebeu:", token)
         else:
-            erro = Erro("ERRO:esperado ')'","ERRO SINTATICO")
-            fila_erros.put(erro)
-
-    # Verdadeiro ou falso
-    elif token.lexema in ["verdadeiro", "falso"]:
-        token = fila_tokens.get()
-        # print("[Sintatico] Recebeu:", token)
-
-    else:
-        erro = Erro("ERRO:fator invalido","ERRO SINTATICO")
-        fila_erros.put(erro)
+            # Verifica se o operador lógico é o nao
+            if token.simbolo == "snao": 
+                token = fila_tokens.get()
+                # print("[Sintatico] Recebeu:", token)
+                token = Analisa_fator(token, fila_tokens,fila_erros)
+            else:
+                # É expressão entre parênteses
+                if token.simbolo == "sabre_parenteses":
+                    token = fila_tokens.get()
+                    # print("[Sintatico] Recebeu:", token)
+                    token = Analisa_expressao(token, fila_tokens,fila_erros)
+                    if token.simbolo == "sfecha_parenteses":
+                        token = fila_tokens.get()  # consome o ')'
+                        # print("[Sintatico] Recebeu:", token)
+                    else:
+                        erro = Erro("ERRO: esperado ')'","ERRO SINTATICO")
+                        fila_erros.put(erro)
+                else:
+                    if token.simbolo == "sverdadeiro" or token.simbolo == "sfalso":
+                        token = fila_tokens.get()
+                        # print("[Sintatico] Recebeu:", token)
+                    else:
+                        erro = Erro("ERRO: fator invalido","ERRO SINTATICO")
+                        fila_erros.put(erro)    
 
     return token
 
@@ -465,26 +474,31 @@ def Analisa_atribuicao(token, fila_tokens,fila_erros):
     token = Analisa_expressao(token, fila_tokens,fila_erros)
     return token
 
-def Analisa_chamada_funcao(token, fila_tokens, fila_erros):
-    # Aqui o token recebido já deve ser um identificador
-    if token.simbolo == "sidentificador":
-        # print("[Sintatico] Chamada de funcao:", token.lexema)
-        token = fila_tokens.get()  # consome o identificador
-    else:
-        erro = Erro("ERRO: identificador esperado em chamada de função", "ERRO SINTATICO")
-        fila_erros.put(erro)
+# def Analisa_chamada_funcao(token, fila_tokens, fila_erros):
+#     # Aqui o token recebido já deve ser um identificador
+#     if token.simbolo == "sidentificador":
+#         # print("[Sintatico] Chamada de funcao:", token.lexema)
+#         token = fila_tokens.get()  # consome o identificador
+#     else:
+#         erro = Erro("ERRO: identificador esperado em chamada de função", "ERRO SINTATICO")
+#         fila_erros.put(erro)
 
-    return token
+#     return token
 
 
 def Chamada_procedimento(token, fila_tokens,fila_erros):
     # Aqui o token recebido já deve ser um identificador
     # print(token.lexema)
-    if token.simbolo == "sidentificador":
-        # print("[Sintatico] Chamada Procedimento:", token.lexema)
-        token = fila_tokens.get()  # consome o identificador
+    token = fila_tokens.get()
+    if TS.pesquisa_tabela(token.lexema) is not None:    
+        if TS.get_categoria(token.lexema) == "procedimento":
+            token = fila_tokens.get()  # consome o identificador
+        else:
+            erro = Erro(f"ERRO: identificador '{token.lexema}' nao é um procedimento", "ERRO SEMANTICO")
+            fila_erros.put(erro)
     else:
-        erro = Erro("ERRO: identificador esperado em chamada de Procedimento", "ERRO SINTATICO")
+        TS.imprimir_tabela()
+        erro = Erro(f"ERRO: identificador '{token.lexema}' nao encontrado na tabela de simbolos", "ERRO SEMANTICO")
         fila_erros.put(erro)
 
     return token
