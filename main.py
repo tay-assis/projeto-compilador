@@ -3,7 +3,7 @@ from src.AnalisadorSintatico import AnalisadorSintatico
 from multiprocessing import Process, Queue
 
 if __name__ == "__main__":
-    arquivo_input = "exemplos/TESTES/semantico/sem1.txt"
+    arquivo_input = "exemplos/TESTES/semantico/sem6.txt"
     arquivo_output = "outputs/tokens.txt"
 
     fila_tokens = Queue()
