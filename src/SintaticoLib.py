@@ -34,7 +34,7 @@ def Analisa_Variaveis(token, fila_tokens, fila_erros):
     while True:
         if token.simbolo == "sidentificador":
             
-            if not TS.pesquisa_declvar_tabela(token.lexema) or not TS.pesquisa_var_tabela_inteira(token.lexema):
+            if not TS.pesquisa_declvar_tabela(token.lexema) or not TS.pesquisa_var_func_tabela_inteira(token.lexema):
                 lista_var.append(token.lexema)
                 
                 TS.insere_tabela(token.lexema, "variavel", tipo=None, nivel=None, info=None)

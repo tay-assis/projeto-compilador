@@ -1,0 +1,8 @@
+{TESTE OK}
+programa teste_minimo;
+
+var a: inteiro;
+
+inicio
+    a := 10
+fim.

@@ -237,7 +237,7 @@ def pesquisa_var_func_tabela_inteira(lexema):
     """
     for simbolo in reversed(tabela_simbolos):
         if simbolo["lexema"] == lexema and simbolo["categoria"] == "variavel":
-            print(f"[Semantico] pesquisa_var_tabela_inteira: '{lexema}' ja declarado.")
+            print(f"[Semantico] pesquisa_var_func_tabela_inteira: '{lexema}' ja declarado.")
             return True
         if simbolo["lexema"] == lexema and simbolo["categoria"] != "funcao":
             return True

@@ -1,0 +1,9 @@
+programa erro_tipo_op;
+
+var x: inteiro;
+    b: booleano;
+
+inicio
+    x := verdadeiro;
+    b := 10
+fim.
