@@ -37,7 +37,7 @@ def Analisa_Variaveis(token, fila_tokens, fila_erros):
             if not TS.pesquisa_declvar_tabela(token.lexema) or not TS.pesquisa_var_func_tabela_inteira(token.lexema):
                 lista_var.append(token.lexema)
                 
-                TS.insere_tabela(token.lexema, "variavel", tipo=None, nivel=None, info=None)
+                TS.insere_tabela(token.lexema, "variavel", tipo=None, nivel=None, end=None)
             
                 token = fila_tokens.get()  # consome identificador
                 # print("[Sintatico] Recebeu:", token)
@@ -288,14 +288,13 @@ def Analisa_declaracao_procedimento(token, fila_tokens,fila_erros):
         if not TS.pesquisa_declproc_tabela(token.lexema):
 
             # Insere o procedimento na tabela de símbolos
-            TS.insere_tabela(token.lexema, "procedimento", tipo=None, nivel=None, info=None)
+            TS.insere_tabela(token.lexema, "procedimento", tipo=None, nivel=None, end=None)
+
+            # Gera um novo rótulo (USADO PARA A GERAÇÃO DE CÓDIGO)
+            rotulo = TS.novo_rotulo()
 
             # Entra em um novo escopo (gera a marca e incrementa o escopo)
             TS.enter_scope()
-
-            # GERA ROTULO DO PROCEDIMENTO NO CODIGO OBJETO
-            # Gera(rotulo,...)
-            # rotulo += 1
             
             # consome o identificador
             token = fila_tokens.get()
@@ -349,7 +348,10 @@ def Analisa_declaracao_funcao(token, fila_tokens,fila_erros):
 
         if not TS.pesquisa_declfunc_tabela(token.lexema):
             # Insere a função na tabela de símbolos
-            TS.insere_tabela(token.lexema, "funcao", tipo=None, nivel=None, info=None)
+            TS.insere_tabela(token.lexema, "funcao", tipo=None, nivel=None, end=None)
+            
+            # Gera um novo rótulo (USADO PARA A GERAÇÃO DE CÓDIGO)
+            rotulo = TS.novo_rotulo()
 
             # Entra em um novo escopo (gera a marca e incrementa o escopo)
             TS.enter_scope()

@@ -8,7 +8,7 @@ var
 
 funcao f1: inteiro;
 inicio
-    f1 := verdadeiro
+    f1 := 10;
 fim;
 
 funcao f2: booleano;
@@ -21,7 +21,7 @@ inicio
     x := f1;      { f1 é inteiro — OK }
 
     { --- TESTE 2: ERRO --- }
-    b := f1;      { f1 é inteiro, b é booleano → ERRO }
+    b := f2;      { f1 é inteiro, b é booleano → ERRO }
 
     { --- TESTE 3: OK --- }
     b := f2;      { f2 é booleano — OK }
