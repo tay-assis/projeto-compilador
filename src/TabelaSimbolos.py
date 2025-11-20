@@ -302,6 +302,15 @@ def get_categoria(lexema):
         return simbolo["categoria"]
     return None
 
+def get_tipo(lexema):
+    """
+    Retorna o tipo do símbolo com o lexema dado, ou None se não encontrado.
+    """
+    simbolo = pesquisa_tabela(lexema)
+    if simbolo is not None:
+        return simbolo["tipo"]
+    return None
+
 
 # ===========================
 # Funções auxiliares de leitura da tabela

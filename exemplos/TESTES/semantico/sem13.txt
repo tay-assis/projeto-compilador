@@ -1,0 +1,29 @@
+{TESTE FUNÇÃO - TIPOS}
+
+programa teste_funcoes;
+
+var 
+    x, y: inteiro;
+    b: booleano;
+
+funcao f1: inteiro;
+inicio
+    f1 := verdadeiro
+fim;
+
+funcao f2: booleano;
+inicio
+    f2 := verdadeiro
+fim;
+
+inicio
+    { --- TESTE 1: OK --- }
+    x := f1;      { f1 é inteiro — OK }
+
+    { --- TESTE 2: ERRO --- }
+    b := f1;      { f1 é inteiro, b é booleano → ERRO }
+
+    { --- TESTE 3: OK --- }
+    b := f2;      { f2 é booleano — OK }
+
+fim.

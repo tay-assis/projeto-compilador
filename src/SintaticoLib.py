@@ -126,7 +126,7 @@ def Analisa_comandos(token,fila_tokens,fila_erros):
     
 
 def Analisa_comando_simples(token,fila_tokens,fila_erros):
-    if token.simbolo == "sidentificador":
+    if token.simbolo == "sidentificador": # pode ser atribuição de variável, função (retorno da função) ou chamada de procedimento
         print("\n\n comando simples com identificador:", token.lexema, token.simbolo +"\n\n")
         token = Analisa_atrib_chprocedimento(token,fila_tokens,fila_erros)
     else:
@@ -150,14 +150,27 @@ def Analisa_comando_simples(token,fila_tokens,fila_erros):
 def Analisa_atrib_chprocedimento(token,fila_tokens,fila_erros):
     if token.simbolo == "sidentificador":
         if TS.get_categoria(token.lexema) == "variavel":
+            tipo_var = TS.get_tipo(token.lexema) # Obtém o tipo da variável
             token = fila_tokens.get()
             if token.simbolo == "satribuicao":
-                token = Analisa_atribuicao(token,fila_tokens,fila_erros)
+                token = Analisa_atribuicao(token,fila_tokens,fila_erros, tipo_var)
             else:
                 erro = Erro("ERRO:esperado ':=' apos identificador em atribuicao","ERRO SINTATICO")
                 fila_erros.put(erro)
         else:
-            token = Chamada_procedimento(token,fila_tokens,fila_erros)
+            # Se for função verificar se existe retorno (obrigatório atribuir o retorno da função)
+            if TS.get_categoria(token.lexema) == "funcao":
+                tipo_func = TS.get_tipo(token.lexema) # Obtém o tipo da função
+                token = fila_tokens.get()
+                if token.simbolo == "satribuicao":
+                    token = Analisa_atribuicao(token,fila_tokens,fila_erros, tipo_func)
+                else:
+                    # Erro de função sem atribuição do retorno
+                    erro = Erro("ERRO:esperado atribuir o retorno da funcao","ERRO SINTATICO")
+                    fila_erros.put(erro)
+            else:
+                # É chamada de procedimento
+                token = Chamada_procedimento(token,fila_tokens,fila_erros)
     return token
 
 def Analisa_leia(token, fila_tokens,fila_erros):
@@ -385,39 +398,41 @@ def Analisa_declaracao_funcao(token, fila_tokens,fila_erros):
     TS.exit_scope()
     return token
 
-def Analisa_expressao(token, fila_tokens,fila_erros):
+def Analisa_expressao(token, fila_tokens,fila_erros, var_tipo=None):
     # Primeiro analisa uma expressão simples
-    token = Analisa_expressao_simples(token, fila_tokens,fila_erros)
+    token = Analisa_expressao_simples(token, fila_tokens,fila_erros, var_tipo)
 
     # Se encontrar operador relacional
     if token.simbolo in ["smaior", "smaiorig", "sig", "smenor", "smenorig", "sdif"]:
         print("\n\n operador relacional encontrado:", token.lexema, token.simbolo,"\n\n")
         token = fila_tokens.get()  # consome o operador
         # print("[Sintatico] Recebeu:", token)
-        token = Analisa_expressao_simples(token, fila_tokens,fila_erros)
+        token = Analisa_expressao_simples(token, fila_tokens,fila_erros, var_tipo)
 
     return token
 
-def Analisa_expressao_simples(token, fila_tokens,fila_erros):
+def Analisa_expressao_simples(token, fila_tokens,fila_erros, var_tipo=None):
     # Consome + ou - iniciais, se houver
     if token.simbolo in ["smais", "smenos"]:
         token = fila_tokens.get()
-        # print("[Sintatico] Recebeu:", token)
+        if not TS.verifica_tipo(token.lexema, "inteiro") and not var_tipo == "inteiro":
+            erro = Erro("ERRO: operador '+' ou '-' aplicado a tipo nao inteiro","ERRO SEMANTICO")
+            fila_erros.put(erro)
 
     # Analisa o primeiro termo
-    token = Analisa_termo(token, fila_tokens,fila_erros)
+    token = Analisa_termo(token, fila_tokens,fila_erros, var_tipo)
 
     # Enquanto aparecer +, - ou "ou"
     while token.simbolo in ["smais", "smenos", "sou"]:
         token = fila_tokens.get()  # consome o operador
         # print("[Sintatico] Recebeu:", token)
-        token = Analisa_termo(token, fila_tokens,fila_erros)
+        token = Analisa_termo(token, fila_tokens,fila_erros, var_tipo)
 
     return token
 
-def Analisa_termo(token, fila_tokens,fila_erros):
+def Analisa_termo(token, fila_tokens,fila_erros, var_tipo=None):
     # Analisa o primeiro fator
-    token = Analisa_fator(token, fila_tokens,fila_erros)
+    token = Analisa_fator(token, fila_tokens,fila_erros, var_tipo)
 
     # Enquanto houver * , div ou "e"
     while token.simbolo in ["smult", "sdiv", "se"]:
@@ -425,28 +440,36 @@ def Analisa_termo(token, fila_tokens,fila_erros):
         token = fila_tokens.get()  # consome o operador
         print("\n",token.lexema, token.simbolo,"\n")
         # print("[Sintatico] Recebeu:", token)
-        token = Analisa_fator(token, fila_tokens,fila_erros)
+        token = Analisa_fator(token, fila_tokens,fila_erros, var_tipo)
 
     return token
 
-def Analisa_fator(token, fila_tokens,fila_erros):
+def Analisa_fator(token, fila_tokens,fila_erros, var_tipo=None):
     # Variável ou funcao
     if token.simbolo == "sidentificador": # (Variável ou função)
         print("\n\n pesquisa no fator:"+ token.lexema, token.simbolo +"\n\n")
         # Verifica se é uma função ou variável
         if TS.pesquisa_tabela(token.lexema):
             if TS.get_categoria(token.lexema) == "funcao": # Verifica se é função
-                # token = Analisa_chamada_funcao(token, fila_tokens,fila_erros)
-                token = fila_tokens.get()
+                if TS.verifica_tipo(token.lexema, var_tipo): # Verifica se o tipo da função corresponde ao esperado
+                    # token = Analisa_chamada_funcao(token, fila_tokens,fila_erros)
+                    token = fila_tokens.get()
+                else:
+                    erro = Erro(f"ERRO: tipo de retorno da funcao '{token.lexema}' nao corresponde ao esperado ('{var_tipo}')","ERRO SEMANTICO")
+                    fila_erros.put(erro)
             else:
                 # É variável
-                token = fila_tokens.get()
-                # print("[Sintatico] Recebeu:", token)
+                if TS.verifica_tipo(token.lexema, var_tipo): # Verifica se o tipo da variável corresponde ao esperado
+                    token = fila_tokens.get()
+                    # print("[Sintatico] Recebeu:", token)
+                else:
+                    erro = Erro(f"ERRO: tipo da variavel '{token.lexema}' nao corresponde ao esperado ('{var_tipo}')","ERRO SEMANTICO")
+                    fila_erros.put(erro)
         else:
             erro = Erro(f"ERRO: identificador '{token.lexema}' nao declarado","ERRO SEMANTICO")
             fila_erros.put(erro)
     else: 
-        # É numero -> inteiro
+        # É numero
         if token.simbolo == "snumero":
             token = fila_tokens.get()
             # print("[Sintatico] Recebeu:", token)
@@ -455,7 +478,7 @@ def Analisa_fator(token, fila_tokens,fila_erros):
             if token.simbolo == "snao": 
                 token = fila_tokens.get()
                 # print("[Sintatico] Recebeu:", token)
-                token = Analisa_fator(token, fila_tokens,fila_erros)
+                token = Analisa_fator(token, fila_tokens,fila_erros, var_tipo="booleano")
             else:
                 # É expressão entre parênteses
                 if token.simbolo == "sabre_parenteses":
@@ -463,7 +486,7 @@ def Analisa_fator(token, fila_tokens,fila_erros):
                     token = fila_tokens.get()
                     print("\n",token.lexema, token.simbolo,"\n")
                     # print("[Sintatico] Recebeu:", token)
-                    token = Analisa_expressao(token, fila_tokens,fila_erros)
+                    token = Analisa_expressao(token, fila_tokens,fila_erros, var_tipo)
                     print("\n",token.lexema, token.simbolo,"\n")
                     if token.simbolo == "sfecha_parenteses":
                         token = fila_tokens.get()  # consome o ')'
@@ -473,20 +496,24 @@ def Analisa_fator(token, fila_tokens,fila_erros):
                         fila_erros.put(erro)
                 else:
                     if token.simbolo == "sverdadeiro" or token.simbolo == "sfalso":
+                        # Verificação de tipo: o fator booleano só é permitido quando var_tipo for booleano ou None
+                        if var_tipo != "booleano":
+                            erro = Erro(f"ERRO: valor booleano '{token.lexema}' nao corresponde ao tipo esperado '{var_tipo}'","ERRO SEMANTICO")
+                            fila_erros.put(erro)
+                        
                         token = fila_tokens.get()
-                        # print("[Sintatico] Recebeu:", token)
                     else:
                         erro = Erro("ERRO: fator invalido","ERRO SINTATICO")
                         fila_erros.put(erro)    
 
     return token
 
-def Analisa_atribuicao(token, fila_tokens,fila_erros):
+def Analisa_atribuicao(token, fila_tokens,fila_erros, var_tipo=None):
     token = fila_tokens.get() # consome o ':='
     # print("[Sintatico] Recebeu:", token)
     
     # Espera uma expressão do lado direito
-    token = Analisa_expressao(token, fila_tokens,fila_erros)
+    token = Analisa_expressao(token, fila_tokens,fila_erros, var_tipo)
     return token
 
 # def Analisa_chamada_funcao(token, fila_tokens, fila_erros):
