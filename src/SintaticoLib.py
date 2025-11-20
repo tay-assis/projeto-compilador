@@ -382,6 +382,7 @@ def Analisa_expressao(token, fila_tokens,fila_erros):
 
     # Se encontrar operador relacional
     if token.simbolo in ["smaior", "smaiorig", "sig", "smenor", "smenorig", "sdif"]:
+        print("\n\n operador relacional encontrado:", token.lexema, token.simbolo,"\n\n")
         token = fila_tokens.get()  # consome o operador
         # print("[Sintatico] Recebeu:", token)
         token = Analisa_expressao_simples(token, fila_tokens,fila_erros)
@@ -411,7 +412,9 @@ def Analisa_termo(token, fila_tokens,fila_erros):
 
     # Enquanto houver * , div ou "e"
     while token.simbolo in ["smult", "sdiv", "se"]:
+        print("\n\n operador de termo encontrado:", token.lexema, token.simbolo,"\n\n")
         token = fila_tokens.get()  # consome o operador
+        print("\n",token.lexema, token.simbolo,"\n")
         # print("[Sintatico] Recebeu:", token)
         token = Analisa_fator(token, fila_tokens,fila_erros)
 
@@ -420,6 +423,7 @@ def Analisa_termo(token, fila_tokens,fila_erros):
 def Analisa_fator(token, fila_tokens,fila_erros):
     # Variável ou funcao
     if token.simbolo == "sidentificador": # (Variável ou função)
+        print("\n\n pesquisa no fator:"+ token.lexema, token.simbolo +"\n\n")
         # Verifica se é uma função ou variável
         if TS.pesquisa_tabela(token.lexema):
             if TS.get_categoria(token.lexema) == "funcao": # Verifica se é função
@@ -451,6 +455,7 @@ def Analisa_fator(token, fila_tokens,fila_erros):
                     print("\n",token.lexema, token.simbolo,"\n")
                     # print("[Sintatico] Recebeu:", token)
                     token = Analisa_expressao(token, fila_tokens,fila_erros)
+                    print("\n",token.lexema, token.simbolo,"\n")
                     if token.simbolo == "sfecha_parenteses":
                         token = fila_tokens.get()  # consome o ')'
                         # print("[Sintatico] Recebeu:", token)
@@ -492,7 +497,8 @@ def Chamada_procedimento(token, fila_tokens,fila_erros):
     # Aqui o token recebido já deve ser um identificador
     # print(token.lexema)
     token = fila_tokens.get()
-    if TS.pesquisa_tabela(token.lexema) is not None:    
+    if TS.pesquisa_tabela(token.lexema) is not None:  
+        print("\n\n pesquisa no procedimento:", token.lexema, "\n\n")  
         if TS.get_categoria(token.lexema) == "procedimento":
             token = fila_tokens.get()  # consome o identificador
         else:

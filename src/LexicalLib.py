@@ -88,7 +88,7 @@ def trata_op_relacional(posicao_atual,conteudo):
 
         if c == "=":
             # igualdade
-            return Token("=", "sigual")
+            return Token("=", "sig")
 
         # fallback (não deve chegar aqui)
         return Token(c, "ERRO")
