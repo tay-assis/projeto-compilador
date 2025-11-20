@@ -1,0 +1,10 @@
+programa teste_variaveis;
+
+var a,b,c: inteiro;
+    flag1,flag2: booleano;
+
+inicio
+    a := 2;
+    c := a + 3;
+    flag1 := verdadeiro
+fim.

@@ -1,0 +1,14 @@
+{TESTE OK}
+programa teste_expressao;
+
+var a,b,c: inteiro;
+    ok: booleano;
+
+inicio
+    a := 10;
+    b := 20;
+    c := (a + b) * (b - a);
+    ok := (c > 0) e nao (a = b);
+    escreva(c);
+    escreva(ok)
+fim.

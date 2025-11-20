@@ -1,0 +1,13 @@
+{Procedimento duplicado}
+programa erro_proc_dup;
+
+procedimento p;
+inicio
+fim;
+
+procedimento p;   {ERRO: já existe}
+inicio
+fim;
+
+inicio
+fim.

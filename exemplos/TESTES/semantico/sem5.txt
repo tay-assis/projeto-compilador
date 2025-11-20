@@ -1,0 +1,16 @@
+{TESTE OK}
+programa teste_funcao;
+
+var r: inteiro;
+
+funcao dobro: inteiro;
+var a: inteiro;
+inicio
+    leia(a);
+    dobro := a * 2
+fim;
+
+inicio
+    r := dobro;
+    escreva(r)
+fim.
