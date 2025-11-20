@@ -109,14 +109,14 @@ def Analisa_comandos(token,fila_tokens,fila_erros):
         # print("[Sintatico] Recebeu:", token)
         token = Analisa_comando_simples(token,fila_tokens,fila_erros)
         while(token.simbolo != "sfim"):
-            #if token.simbolo == "spontovirgula":
+            if token.simbolo == "spontovirgula":
                 token = fila_tokens.get()
                 # print("[Sintatico] Recebeu:", token)
                 if(token.simbolo != "sfim"):
                     token = Analisa_comando_simples(token,fila_tokens,fila_erros)
-            #else:
-                #erro = Erro("ERRO: ';' ausente","ERRO SINTATICO")
-                #fila_erros.put(erro)
+            else:
+                erro = Erro("ERRO: ';' ausente","ERRO SINTATICO")
+                fila_erros.put(erro)
         token = fila_tokens.get()
         # print("[Sintatico] Recebeu:", token)
     else:
@@ -127,6 +127,7 @@ def Analisa_comandos(token,fila_tokens,fila_erros):
 
 def Analisa_comando_simples(token,fila_tokens,fila_erros):
     if token.simbolo == "sidentificador":
+        print("\n\n comando simples com identificador:", token.lexema, token.simbolo +"\n\n")
         token = Analisa_atrib_chprocedimento(token,fila_tokens,fila_erros)
     else:
         if token.simbolo == "sse":
@@ -147,12 +148,16 @@ def Analisa_comando_simples(token,fila_tokens,fila_erros):
     return token
 
 def Analisa_atrib_chprocedimento(token,fila_tokens,fila_erros):
-    token = fila_tokens.get()
-    # print("[Sintatico] Recebeu:", token)
-    if token.simbolo == "satribuicao":
-        token = Analisa_atribuicao(token,fila_tokens,fila_erros)
-    else:
-        token = Chamada_procedimento(token,fila_tokens,fila_erros)
+    if token.simbolo == "sidentificador":
+        if TS.get_categoria(token.lexema) == "variavel":
+            token = fila_tokens.get()
+            if token.simbolo == "satribuicao":
+                token = Analisa_atribuicao(token,fila_tokens,fila_erros)
+            else:
+                erro = Erro("ERRO:esperado ':=' apos identificador em atribuicao","ERRO SINTATICO")
+                fila_erros.put(erro)
+        else:
+            token = Chamada_procedimento(token,fila_tokens,fila_erros)
     return token
 
 def Analisa_leia(token, fila_tokens,fila_erros):
@@ -165,15 +170,19 @@ def Analisa_leia(token, fila_tokens,fila_erros):
         if token.simbolo == "sidentificador":
             # Verifica se a variável foi declarada até o marcador
             if TS.pesquisa_var_func_tabela_inteira(token.lexema):
-
-                token = fila_tokens.get()
-                # print("[Sintatico] Recebeu:", token)
-                if token.simbolo == "sfecha_parenteses":
-                        token = fila_tokens.get()  # consome o ')'
-                        # print("[Sintatico] Recebeu :", token)
+                # Verifica se a variável é do tipo inteiro
+                if not TS.verifica_tipo(token.lexema, "inteiro"):
+                    erro = Erro(f"ERRO: variavel '{token.lexema}' nao é do tipo inteiro em 'leia'","ERRO SEMANTICO")
+                    fila_erros.put(erro)
                 else:
-                        erro = Erro("ERRO:esperado ')' após identificador","ERRO SINTATICO")
-                        fila_erros.put(erro)
+                    token = fila_tokens.get()
+                    # print("[Sintatico] Recebeu:", token)
+                    if token.simbolo == "sfecha_parenteses":
+                            token = fila_tokens.get()  # consome o ')'
+                            # print("[Sintatico] Recebeu :", token)
+                    else:
+                            erro = Erro("ERRO:esperado ')' após identificador","ERRO SINTATICO")
+                            fila_erros.put(erro)
             else:
                 erro = Erro(f"ERRO: variavel '{token.lexema}' não declarada","ERRO SEMANTICO")
                 fila_erros.put(erro)
@@ -473,10 +482,9 @@ def Analisa_fator(token, fila_tokens,fila_erros):
     return token
 
 def Analisa_atribuicao(token, fila_tokens,fila_erros):
-    # Consome o ':=' (atribuição)
-    token = fila_tokens.get()
+    token = fila_tokens.get() # consome o ':='
     # print("[Sintatico] Recebeu:", token)
-
+    
     # Espera uma expressão do lado direito
     token = Analisa_expressao(token, fila_tokens,fila_erros)
     return token
@@ -495,10 +503,9 @@ def Analisa_atribuicao(token, fila_tokens,fila_erros):
 
 def Chamada_procedimento(token, fila_tokens,fila_erros):
     # Aqui o token recebido já deve ser um identificador
-    # print(token.lexema)
-    token = fila_tokens.get()
+    print("\n\n Chamada de procedimento:", token.lexema, token.simbolo +"\n\n")
     if TS.pesquisa_tabela(token.lexema) is not None:  
-        print("\n\n pesquisa no procedimento:", token.lexema, "\n\n")  
+        print("\n\n pesquisa no procedimento:"+ token.lexema, token.simbolo +"\n\n")  
         if TS.get_categoria(token.lexema) == "procedimento":
             token = fila_tokens.get()  # consome o identificador
         else:
