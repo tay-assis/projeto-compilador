@@ -21,6 +21,7 @@ def AnalisadorSintatico(fila_tokens,fila_erros):
 
                 # Insere o nome do programa na tabela de símbolos
                 TS.insere_tabela(token.lexema, "nomedeprograma", tipo=None, nivel=None, end=None)
+                gera("","START","","")
 
                 # Inicio o escopo do programa
                 TS.enter_scope() # nível 0
