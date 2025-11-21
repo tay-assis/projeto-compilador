@@ -23,6 +23,7 @@ reservadas = {
     "nao": "snao",
     "verdadeiro": "sverdadeiro",
     "falso": "sfalso",
+    "numero": "snumero",
 }
 
 def AnalisadorLexical(caminho_arquivo, fila_tokens,fila_erros):

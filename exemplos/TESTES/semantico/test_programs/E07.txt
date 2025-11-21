@@ -1,0 +1,10 @@
+programa erro_func_sem_retorno;
+
+funcao f: inteiro;
+inicio
+    leia(x)
+fim;
+
+inicio
+    escreva(1)
+fim.

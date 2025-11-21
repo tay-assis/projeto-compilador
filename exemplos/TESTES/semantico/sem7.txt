@@ -1,0 +1,8 @@
+{Variável NÃO declarada}
+programa erro_var_nao_decl;
+
+var a: inteiro;
+
+inicio
+    b := 10  {ERRO: b não declarada}
+fim.

@@ -1,0 +1,13 @@
+{Identificador usado como procedimento}
+programa erro_chamada_nao_proc;
+
+var a: inteiro;
+
+procedimento p;
+inicio
+    a := 1
+fim;
+
+inicio
+    a;   {ERRO: a não é procedimento}
+fim.
