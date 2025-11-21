@@ -1,9 +1,9 @@
 # ============================================
 # TabelaSimbolos.py - implementação (Modelo 1)
 # Implementação baseada no material do professor
-# Cada entrada: lexema, categoria, tipo, nivel, info
+# Cada entrada: lexema, categoria, tipo, nivel, end
 # categoria: "variavel", "procedimento", "funcao", "programa", "marcador"
-# info: endereço (para variáveis) ou rótulo (para procedimentos/funções) ou None
+# end: endereço (para variáveis e funções)
 # ============================================
 
 # Tabela (pilha)
@@ -19,6 +19,8 @@ endereco_global = 0
 # Contador de rótulos (para geração de código)
 _rotulo_counter = 0
 
+rotulo = 0
+
 # ===========================
 # Funções utilitárias
 # ===========================
@@ -30,19 +32,6 @@ def novo_rotulo():
     rot = f"L{_rotulo_counter}"
     print(f"[TabelaSimbolos] Novo rotulo criado: {rot}")
     return rot
-
-# def iniciar_enderecamento_para_nivel(nivel):
-#     """Inicializa o contador de endereços para um nível (se ainda não existir)."""
-#     if nivel not in enderecos_por_nivel:
-#         enderecos_por_nivel[nivel] = 0
-#         print(f"[TabelaSimbolos] Enderecamento iniciado para nivel {nivel} (offset=0)")
-
-# def liberar_enderecamento_nivel(nivel):
-#     """Remove contador de endereços de um nível (quando fechar o escopo)."""
-#     if nivel in enderecos_por_nivel:
-#         del enderecos_por_nivel[nivel]
-#         print(f"[TabelaSimbolos] Enderecamento removido para nivel {nivel}")
-
 
 # ===========================
 # Reiniciar tabela (usar no início do analisador)
@@ -94,15 +83,14 @@ def exit_scope():
 # ===========================
 # Inserção genérica na tabela
 # ===========================
-def insere_tabela(lexema, categoria, tipo=None, nivel=None, info=None):
+def insere_tabela(lexema, categoria, tipo=None, nivel=None, end=None):
     """
     Insere um símbolo na tabela.
     - lexema: string
     - categoria: "variavel", "procedimento", "funcao", "programa", "marcador"
     - tipo: "inteiro"/"booleano"/None (ou "programa" para nome de programa)
     - nivel: se None, será usado nivel_atual (recomendado)
-    - info: se categoria == "variavel" -> será calculado como offset no nivel;
-            se categoria in ["procedimento","funcao"] e info is None -> atribui rótulo automaticamente.
+    - end: adiciona o endereço (variável e função).
     """
     global topo, tabela_simbolos, nivel_atual, endereco_global
 
@@ -111,28 +99,28 @@ def insere_tabela(lexema, categoria, tipo=None, nivel=None, info=None):
 
     # Variáveis recebem endereço (offset) por nível
     if categoria == "variavel":
-        info = endereco_global
+        end = endereco_global
         endereco_global += 1
-        print(f"[Semantico] Atribuido endereco {info} para variavel '{lexema}' no nivel {nivel}")
+        print(f"[Semantico] Atribuido endereco {end} para variavel '{lexema}' no nivel {nivel}")
+    # Para função retorna o rótulo diretamente e adiciona o endereço da função na tabela
+    elif categoria == "funcao":
+        if end is None:
+            end = endereco_global
+            endereco_global += 1
+        # rotulo = novo_rotulo()
 
-    # Procedimento/Função recebem rótulo se não fornecido
-    if categoria in ("procedimento", "funcao"):
-        if info is None:
-            info = novo_rotulo()
 
     simbolo = {
         "lexema": lexema,
         "categoria": categoria,
         "tipo": tipo,
         "nivel": nivel,
-        "info": info
+        "end": end,
     }
 
     tabela_simbolos.append(simbolo)
     topo += 1
     print(f"[TabelaSimbolos] Inserido: {simbolo}")
-
-    return topo  # retorna índice onde foi inserido (útil)
 
 
 # ===========================
@@ -154,7 +142,7 @@ def pop_simbolo():
 # ===========================
 def push_marcador(nivel):
     """Insere um marcador de escopo na tabela (categoria 'marcador')."""
-    insere_tabela("marcador", "marcador", tipo=None, nivel=nivel, info=None)
+    insere_tabela("marcador", "marcador", tipo=None, nivel=nivel, end=None)
 
 
 # ===========================
@@ -280,18 +268,33 @@ def insere_tipo(lexema, tipo):
 def verifica_tipo(lexema, tipo_esperado):
     """
     Verifica se o símbolo com o lexema dado tem o tipo esperado.
-    Retorna True se o tipo confere, False caso contrário.
+    'tipo_esperado' pode ser um string ("inteiro"/"booleano")
+    ou uma lista de tipos permitidos (ex: ["inteiro", "booleano"]).
     """
     simbolo = pesquisa_tabela(lexema)
     if simbolo is None:
         print(f"[Semantico] verifica_tipo: simbolo '{lexema}' nao encontrado.")
         return False
-    if simbolo["tipo"] == tipo_esperado:
+
+    tipo_real = simbolo["tipo"]
+
+    # Se tipo_esperado for lista → aceitar qualquer um
+    if isinstance(tipo_esperado, list):
+        if tipo_real in tipo_esperado:
+            print(f"[Semantico] verifica_tipo: tipo de '{lexema}' = '{tipo_real}' confere com um dos tipos permitidos {tipo_esperado}.")
+            return True
+        else:
+            print(f"[Semantico] verifica_tipo: tipo de '{lexema}' = '{tipo_real}' NAO confere com nenhum dos tipos permitidos {tipo_esperado}.")
+            return False
+
+    # Caso contrário → comparação normal
+    if tipo_real == tipo_esperado:
         print(f"[Semantico] verifica_tipo: tipo de '{lexema}' confere com '{tipo_esperado}'.")
         return True
     else:
-        print(f"[Semantico] verifica_tipo: tipo de '{lexema}' ('{simbolo['tipo']}') NAO confere com '{tipo_esperado}'.")
+        print(f"[Semantico] verifica_tipo: tipo de '{lexema}' ('{tipo_real}') NAO confere com '{tipo_esperado}'.")
         return False
+
     
 def get_categoria(lexema):
     """
@@ -300,6 +303,15 @@ def get_categoria(lexema):
     simbolo = pesquisa_tabela(lexema)
     if simbolo is not None:
         return simbolo["categoria"]
+    return None
+
+def get_tipo(lexema):
+    """
+    Retorna o tipo do símbolo com o lexema dado, ou None se não encontrado.
+    """
+    simbolo = pesquisa_tabela(lexema)
+    if simbolo is not None:
+        return simbolo["tipo"]
     return None
 
 

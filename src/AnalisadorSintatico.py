@@ -20,7 +20,7 @@ def AnalisadorSintatico(fila_tokens,fila_erros):
             if token.simbolo == "sidentificador":
 
                 # Insere o nome do programa na tabela de símbolos
-                TS.insere_tabela(token.lexema, "nomedeprograma", tipo=None, nivel=None, info=None)
+                TS.insere_tabela(token.lexema, "nomedeprograma", tipo=None, nivel=None, end=None)
 
                 # Inicio o escopo do programa
                 TS.enter_scope() # nível 0
