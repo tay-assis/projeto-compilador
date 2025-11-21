@@ -314,6 +314,16 @@ def get_tipo(lexema):
         return simbolo["tipo"]
     return None
 
+def get_endereco(lexema):
+    """
+    Retorna o tipo do símbolo com o lexema dado, ou None se não encontrado.
+    """
+    simbolo = pesquisa_tabela(lexema)
+    if simbolo is not None:
+        return simbolo["end"]
+    return None
+
+
 
 # ===========================
 # Funções auxiliares de leitura da tabela
