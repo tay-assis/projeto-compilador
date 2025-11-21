@@ -102,9 +102,6 @@ def insere_tabela(lexema, categoria, tipo=None, nivel=None, end=None):
         end = endereco_global
         endereco_global += 1
         print(f"[Semantico] Atribuido endereco {end} para variavel '{lexema}' no nivel {nivel}")
-    # Procedimentos recebem rótulo automaticamente
-    # elif categoria == "procedimento":
-        # rotulo = novo_rotulo()
     # Para função retorna o rótulo diretamente e adiciona o endereço da função na tabela
     elif categoria == "funcao":
         if end is None:
@@ -273,18 +270,33 @@ def insere_tipo(lexema, tipo):
 def verifica_tipo(lexema, tipo_esperado):
     """
     Verifica se o símbolo com o lexema dado tem o tipo esperado.
-    Retorna True se o tipo confere, False caso contrário.
+    'tipo_esperado' pode ser um string ("inteiro"/"booleano")
+    ou uma lista de tipos permitidos (ex: ["inteiro", "booleano"]).
     """
     simbolo = pesquisa_tabela(lexema)
     if simbolo is None:
         print(f"[Semantico] verifica_tipo: simbolo '{lexema}' nao encontrado.")
         return False
-    if simbolo["tipo"] == tipo_esperado:
+
+    tipo_real = simbolo["tipo"]
+
+    # Se tipo_esperado for lista → aceitar qualquer um
+    if isinstance(tipo_esperado, list):
+        if tipo_real in tipo_esperado:
+            print(f"[Semantico] verifica_tipo: tipo de '{lexema}' = '{tipo_real}' confere com um dos tipos permitidos {tipo_esperado}.")
+            return True
+        else:
+            print(f"[Semantico] verifica_tipo: tipo de '{lexema}' = '{tipo_real}' NAO confere com nenhum dos tipos permitidos {tipo_esperado}.")
+            return False
+
+    # Caso contrário → comparação normal
+    if tipo_real == tipo_esperado:
         print(f"[Semantico] verifica_tipo: tipo de '{lexema}' confere com '{tipo_esperado}'.")
         return True
     else:
-        print(f"[Semantico] verifica_tipo: tipo de '{lexema}' ('{simbolo['tipo']}') NAO confere com '{tipo_esperado}'.")
+        print(f"[Semantico] verifica_tipo: tipo de '{lexema}' ('{tipo_real}') NAO confere com '{tipo_esperado}'.")
         return False
+
     
 def get_categoria(lexema):
     """
