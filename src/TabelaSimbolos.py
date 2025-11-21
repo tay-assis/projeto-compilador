@@ -122,8 +122,6 @@ def insere_tabela(lexema, categoria, tipo=None, nivel=None, end=None):
     topo += 1
     print(f"[TabelaSimbolos] Inserido: {simbolo}")
 
-    return topo  # retorna índice onde foi inserido (útil)
-
 
 # ===========================
 # Remover último símbolo

@@ -91,10 +91,9 @@ def Analisa_comandos(token, fila_tokens, fila_erros):
         token = fila_tokens.get()
         token = Analisa_comando_simples(token, fila_tokens, fila_erros)
         while token.simbolo != "sfim":
-            if token.simbolo == "spontovirgula":
-                token = fila_tokens.get()
-                if token.simbolo != "sfim":
-                    token = Analisa_comando_simples(token, fila_tokens, fila_erros)
+            token = fila_tokens.get()
+            if token.simbolo != "sfim":
+                token = Analisa_comando_simples(token, fila_tokens, fila_erros)
         token = fila_tokens.get()
     else:
         erro = Erro("ERRO: em declarações apos programa,procedimento ou funcao", "ERRO SINTATICO")
