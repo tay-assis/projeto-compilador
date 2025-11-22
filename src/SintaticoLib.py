@@ -2,6 +2,18 @@ from src.Erro import Erro
 import src.TabelaSimbolos as TS
 from src.Gera import gera
 
+_rotulo_counter = 0
+
+def novo_rotulo():
+    """Gera e retorna um novo rótulo (string)."""
+    global _rotulo_counter
+    _rotulo_counter += 1
+    rot = f"L{_rotulo_counter}"
+    print(f"[TabelaSimbolos] Novo rotulo criado: {rot}")
+    return rot
+
+
+rotulo = novo_rotulo()
 
 def Analisa_bloco(token, fila_tokens, fila_erros):
     token = Analisa_et_variaveis(token, fila_tokens, fila_erros)
@@ -98,6 +110,8 @@ def Analisa_comandos(token, fila_tokens, fila_erros):
             token = fila_tokens.get()
             if token.simbolo != "sfim":
                 token = Analisa_comando_simples(token, fila_tokens, fila_erros)
+        end_ini,end_fim = TS.get_dalloc()
+        gera("","DALLOC",end_fim,end_ini)
         token = fila_tokens.get()
     else:
         erro = Erro("ERRO: em declarações apos programa,procedimento ou funcao", "ERRO SINTATICO")
@@ -136,8 +150,8 @@ def Analisa_atrib_chprocedimento(token, fila_tokens, fila_erros):
             gera("","STR",end,"")
         elif TS.get_categoria(token.lexema) == "funcao":
             # função: verificar se existe retorno obrigatório
-            rotulo = TS.get_rotulo(token.lexema)
-            gera("","CALL",rotulo,"")
+            rotulo_funcao = TS.get_rotulo(token.lexema)
+            gera("","CALL",rotulo_funcao,"")
             tipo_func = TS.get_tipo(token.lexema)
             token = fila_tokens.get()
             if token.simbolo == "satribuicao":
@@ -212,11 +226,22 @@ def Analisa_escreva(token, fila_tokens, fila_erros):
 
 
 def Analisa_enquanto(token, fila_tokens, fila_erros):
+    global rotulo
+    auxrot1 = None
+    auxrot2 = None
+    auxrot1 = rotulo
+    gera(rotulo,"NULL","","")
+    rotulo = novo_rotulo()
     token = fila_tokens.get()
     token = Analisa_expressao(token, fila_tokens, fila_erros, ["inteiro", "booleano"])
     if token.simbolo == "sfaca":
+        auxrot2 = rotulo
+        gera("","JMPF",rotulo,"")
+        rotulo = novo_rotulo()
         token = fila_tokens.get()
         token = Analisa_comando_simples(token, fila_tokens, fila_erros)
+        gera("","JMP",auxrot1,"")
+        gera(auxrot2,"NULL","","")
     else:
         erro = Erro("ERRO:esperado 'faca' após expressão no 'enquanto'", "ERRO SINTATICO")
         fila_erros.put(erro)
@@ -224,24 +249,38 @@ def Analisa_enquanto(token, fila_tokens, fila_erros):
 
 
 def Analisa_se(token, fila_tokens, fila_erros):
+    global rotulo
+    auxrot1 = None
+    auxrot2 = None
     token = fila_tokens.get()
     # analisa a expressão condicional
     token = Analisa_expressao(token, fila_tokens, fila_erros, ["inteiro", "booleano"])
 
     if token.simbolo == "sentao":
+        auxrot1 = rotulo
+        gera("", "JMPF", rotulo, "")
+        rotulo = novo_rotulo()
         token = fila_tokens.get()
         token = Analisa_comando_simples(token, fila_tokens, fila_erros)
 
         if token.simbolo == "ssenão":
+            auxrot2 = rotulo
+            gera("", "JMPF", rotulo, "")
+            rotulo = novo_rotulo()
+            gera(auxrot1, "NULL", "", "")
             token = fila_tokens.get()
             token = Analisa_comando_simples(token, fila_tokens, fila_erros)
+            gera(auxrot2, "NULL", "", "")
+        else:
+            gera(auxrot1, "NULL", "", "")
     else:
         erro = Erro("ERRO:esperado 'entao' após expressão no 'se'", "ERRO SINTATICO")
         fila_erros.put(erro)
     return token
 
 
-def Analisa_declaracao_procedimento(token, fila_tokens, fila_erros,rotulo):
+def Analisa_declaracao_procedimento(token, fila_tokens, fila_erros):
+    global rotulo
     token = fila_tokens.get()
 
     if token.simbolo == "sidentificador":
@@ -252,8 +291,9 @@ def Analisa_declaracao_procedimento(token, fila_tokens, fila_erros,rotulo):
             #rotulo = TS.novo_rotulo()
             # entra em um novo escopo
             TS.enter_scope()
-            rotulo = TS.get_rotulo(token.lexema)
             gera(rotulo,"NULL","","")
+            rotulo = novo_rotulo()
+            
             
             token = fila_tokens.get()
             if token.simbolo == "spontovirgula":
@@ -272,7 +312,7 @@ def Analisa_declaracao_procedimento(token, fila_tokens, fila_erros,rotulo):
 
     # sai do escopo ao fim do procedimento
     end_ini,end_fim = TS.get_dalloc()
-    gera("","DALLOC",end_fim,end_ini)
+    #gera("","DALLOC",end_fim,end_ini)
     TS.exit_scope()
     gera("","RETURN","","")
     return token
@@ -280,22 +320,22 @@ def Analisa_declaracao_procedimento(token, fila_tokens, fila_erros,rotulo):
 
 def Analisa_subrotinas(token, fila_tokens, fila_erros):
     # enquanto o token atual for "procedimento" ou "função"
-    rotulo = TS.novo_rotulo()
+    global rotulo
     auxrot = None
     flag = 0
     if token.simbolo == "sprocedimento" or token.simbolo == "sfuncao":
         auxrot = rotulo
         gera("","JMP",rotulo,"")
-        rotulo = TS.novo_rotulo()
+        rotulo = novo_rotulo()
         flag = 1
     while token.simbolo == "sprocedimento" or token.simbolo == "sfuncao":
         if token.simbolo == "sprocedimento":
             
-            token = Analisa_declaracao_procedimento(token, fila_tokens, fila_erros,rotulo)
+            token = Analisa_declaracao_procedimento(token, fila_tokens, fila_erros)
             
         else:
             
-            token = Analisa_declaracao_funcao(token, fila_tokens, fila_erros,rotulo)
+            token = Analisa_declaracao_funcao(token, fila_tokens, fila_erros)
 
         # após a declaração, deve vir ponto e vírgula
         if token.simbolo == "spontovirgula":
@@ -309,7 +349,8 @@ def Analisa_subrotinas(token, fila_tokens, fila_erros):
     return token
 
 
-def Analisa_declaracao_funcao(token, fila_tokens, fila_erros,rotulo):
+def Analisa_declaracao_funcao(token, fila_tokens, fila_erros):
+    global rotulo
     token = fila_tokens.get()
 
     if token.simbolo == "sidentificador":
@@ -324,8 +365,9 @@ def Analisa_declaracao_funcao(token, fila_tokens, fila_erros,rotulo):
             TS.enter_scope()
             end = TS.get_endereco(token.lexema)
             gera("","ALLOC",end,1)
-            rotulo = TS.get_rotulo(token.lexema)
-            gera(rotulo,"NULL","","")
+            rotulo_funcao = TS.get_rotulo(token.lexema)
+            gera(rotulo_funcao,"NULL","","")
+            rotulo = novo_rotulo()
 
             token = fila_tokens.get()
 
@@ -360,8 +402,8 @@ def Analisa_declaracao_funcao(token, fila_tokens, fila_erros,rotulo):
         fila_erros.put(erro)
 
     # sai do escopo ao fim da função
-    end_ini,end_fim = TS.get_dalloc()
-    gera("","DALLOC",end_fim,end_ini)
+    #end_ini,end_fim = TS.get_dalloc()
+    #gera("","DALLOC",end_fim,end_ini)
     TS.exit_scope()
     gera("","RETURN","","")
     return token
@@ -471,6 +513,8 @@ def Chamada_procedimento(token, fila_tokens, fila_erros):
     # o token recebido já deve ser um identificador
     if TS.pesquisa_tabela(token.lexema) is not None:  
         if TS.get_categoria(token.lexema) == "procedimento":
+            rotulo_funcao = TS.get_rotulo(token.lexema)
+            gera("","CALL",rotulo_funcao,"")
             token = fila_tokens.get()
         else:
             erro = Erro(f"ERRO: identificador '{token.lexema}' nao é um procedimento", "ERRO SEMANTICO")
@@ -800,9 +844,9 @@ def gera_codigo_posfixa(posfixa, fila_erros):
             if not TS.pesquisa_tabela(t.lexema):
                 fila_erros.put(Erro(f"ERRO: identificador '{t.lexema}' nao declarado", "ERRO SEMANTICO"))
             if  TS.get_categoria(t.lexema) == "funcao":
-                rotulo = TS.get_rotulo(t.lexema)
+                rotulo_funcao = TS.get_rotulo(t.lexema)
                 end = TS.get_endereco(t.lexema)
-                gera("","CALL",rotulo,"")
+                gera("","CALL",rotulo_funcao,"")
                 gera("", "LDV", end, "")
             else:
                 end = TS.get_endereco(t.lexema)
@@ -833,6 +877,9 @@ def gera_codigo_posfixa(posfixa, fila_erros):
 
         # caso nao mapeado
         fila_erros.put(Erro(f"ERRO: operador/desconhecido na posfixa '{s}'", "ERRO SEMANTICO"))
+
+
+
 
 
 

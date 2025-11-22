@@ -17,21 +17,7 @@ nivel_atual = -1   # começa em -1; ao abrir programa deve chamar enter_scope() 
 endereco_global = 0
 
 # Contador de rótulos (para geração de código)
-_rotulo_counter = 0
 
-rotulo = 0
-
-# ===========================
-# Funções utilitárias
-# ===========================
-
-def novo_rotulo():
-    """Gera e retorna um novo rótulo (string)."""
-    global _rotulo_counter
-    _rotulo_counter += 1
-    rot = f"L{_rotulo_counter}"
-    print(f"[TabelaSimbolos] Novo rotulo criado: {rot}")
-    return rot
 
 # ===========================
 # Reiniciar tabela (usar no início do analisador)
