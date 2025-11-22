@@ -83,7 +83,7 @@ def exit_scope():
 # ===========================
 # Inserção genérica na tabela
 # ===========================
-def insere_tabela(lexema, categoria, tipo=None, nivel=None, end=None):
+def insere_tabela(lexema, categoria, tipo=None, nivel=None, end=None,rotulo_1=None):
     """
     Insere um símbolo na tabela.
     - lexema: string
@@ -107,7 +107,11 @@ def insere_tabela(lexema, categoria, tipo=None, nivel=None, end=None):
         if end is None:
             end = endereco_global
             endereco_global += 1
-        # rotulo = novo_rotulo()
+            rotulo = rotulo_1
+    
+    elif categoria == "procedimento":
+            rotulo = rotulo_1
+    
 
 
     simbolo = {
@@ -116,6 +120,7 @@ def insere_tabela(lexema, categoria, tipo=None, nivel=None, end=None):
         "tipo": tipo,
         "nivel": nivel,
         "end": end,
+        "rotulo":rotulo_1
     }
 
     tabela_simbolos.append(simbolo)
@@ -142,7 +147,7 @@ def pop_simbolo():
 # ===========================
 def push_marcador(nivel):
     """Insere um marcador de escopo na tabela (categoria 'marcador')."""
-    insere_tabela("marcador", "marcador", tipo=None, nivel=nivel, end=None)
+    insere_tabela("marcador", "marcador", tipo=None, nivel=nivel, end=None,rotulo_1=None)
 
 
 # ===========================
@@ -315,13 +320,39 @@ def get_tipo(lexema):
     return None
 
 def get_endereco(lexema):
-    """
-    Retorna o tipo do símbolo com o lexema dado, ou None se não encontrado.
-    """
+
     simbolo = pesquisa_tabela(lexema)
     if simbolo is not None:
         return simbolo["end"]
     return None
+
+def get_rotulo(lexema):
+
+    simbolo = pesquisa_tabela(lexema)
+    if simbolo is not None:
+        return simbolo["rotulo"]
+    return None
+
+def get_dalloc():
+    end_ini = 0
+    end_fim = 0
+
+    for simbolo in reversed(tabela_simbolos):
+        if(nivel_atual != simbolo["nivel"]):
+            break
+        print(simbolo)
+        if simbolo["end"] != None:
+            end_ini == simbolo["end"]
+            break
+    
+    for simbolo in reversed(tabela_simbolos):
+        if(nivel_atual != simbolo["nivel"]):
+            break
+        print(simbolo)
+        end_fim+=1
+    end_fim -=1
+    return end_ini,end_fim
+
 
 
 

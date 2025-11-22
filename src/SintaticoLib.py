@@ -35,7 +35,7 @@ def Analisa_Variaveis(token, fila_tokens, fila_erros):
         if token.simbolo == "sidentificador":
             if not TS.pesquisa_declvar_tabela(token.lexema) or not TS.pesquisa_var_func_tabela_inteira(token.lexema):
                 lista_var.append(token.lexema)
-                TS.insere_tabela(token.lexema, "variavel", tipo=None, nivel=None, end=None)
+                TS.insere_tabela(token.lexema, "variavel", tipo=None, nivel=None, end=None,rotulo_1=None)
                 token = fila_tokens.get()
 
                 if token.simbolo == "svirgula" or token.simbolo == "sdoispontos":
@@ -67,6 +67,9 @@ def Analisa_Variaveis(token, fila_tokens, fila_erros):
     if token.simbolo == "sdoispontos":
         token = fila_tokens.get()
         token = Analisa_Tipo(token, fila_tokens, fila_erros, lista_var)
+        end_ini = TS.get_endereco(lista_var[0])
+        end_fim = len(lista_var)
+        gera("","ALLOC",end_ini,end_fim)
         TS.imprimir_tabela()
     else:
         erro = Erro("ERRO: ':' esperado", "ERRO SINTATICO")
@@ -122,6 +125,7 @@ def Analisa_comando_simples(token, fila_tokens, fila_erros):
 def Analisa_atrib_chprocedimento(token, fila_tokens, fila_erros):
     if token.simbolo == "sidentificador":
         if TS.get_categoria(token.lexema) == "variavel":
+            end = TS.get_endereco(token.lexema)
             tipo_var = TS.get_tipo(token.lexema)
             token = fila_tokens.get()
             if token.simbolo == "satribuicao":
@@ -129,8 +133,11 @@ def Analisa_atrib_chprocedimento(token, fila_tokens, fila_erros):
             else:
                 erro = Erro("ERRO:esperado ':=' apos identificador em atribuicao", "ERRO SINTATICO")
                 fila_erros.put(erro)
+            gera("","STR",end,"")
         elif TS.get_categoria(token.lexema) == "funcao":
             # função: verificar se existe retorno obrigatório
+            rotulo = TS.get_rotulo(token.lexema)
+            gera("","CALL",rotulo,"")
             tipo_func = TS.get_tipo(token.lexema)
             token = fila_tokens.get()
             if token.simbolo == "satribuicao":
@@ -156,6 +163,9 @@ def Analisa_leia(token, fila_tokens, fila_erros):
                     erro = Erro(f"ERRO: variavel '{token.lexema}' nao é do tipo inteiro em 'leia'", "ERRO SEMANTICO")
                     fila_erros.put(erro)
                 else:
+                    gera("","RD","","")
+                    end = TS.get_endereco(token.lexema)
+                    gera("","STR",end,"")
                     token = fila_tokens.get()
                     if token.simbolo == "sfecha_parenteses":
                         token = fila_tokens.get()
@@ -179,7 +189,10 @@ def Analisa_escreva(token, fila_tokens, fila_erros):
     if token.simbolo == "sabre_parenteses":
         token = fila_tokens.get()
         if token.simbolo == "sidentificador":
-            if TS.pesquisa_var_func_tabela_inteira(token.lexema):    
+            if TS.pesquisa_var_func_tabela_inteira(token.lexema):
+                end = TS.get_endereco(token.lexema)
+                gera("","LDV",end,"")
+                gera("","PRN","","")    
                 token = fila_tokens.get()
                 if token.simbolo == "sfecha_parenteses":
                     token = fila_tokens.get()
@@ -228,17 +241,19 @@ def Analisa_se(token, fila_tokens, fila_erros):
     return token
 
 
-def Analisa_declaracao_procedimento(token, fila_tokens, fila_erros):
+def Analisa_declaracao_procedimento(token, fila_tokens, fila_erros,rotulo):
     token = fila_tokens.get()
 
     if token.simbolo == "sidentificador":
         if not TS.pesquisa_declproc_tabela(token.lexema):
             # insere o procedimento na tabela de símbolos
-            TS.insere_tabela(token.lexema, "procedimento", tipo=None, nivel=None, end=None)
+            TS.insere_tabela(token.lexema, "procedimento", tipo=None, nivel=None, end=None,rotulo_1=rotulo)
             # gera um novo rótulo para a geração de código
-            rotulo = TS.novo_rotulo()
+            #rotulo = TS.novo_rotulo()
             # entra em um novo escopo
             TS.enter_scope()
+            rotulo = TS.get_rotulo(token.lexema)
+            gera(rotulo,"NULL","","")
             
             token = fila_tokens.get()
             if token.simbolo == "spontovirgula":
@@ -256,17 +271,31 @@ def Analisa_declaracao_procedimento(token, fila_tokens, fila_erros):
         fila_erros.put(erro)
 
     # sai do escopo ao fim do procedimento
+    end_ini,end_fim = TS.get_dalloc()
+    gera("","DALLOC",end_fim,end_ini)
     TS.exit_scope()
+    gera("","RETURN","","")
     return token
 
 
 def Analisa_subrotinas(token, fila_tokens, fila_erros):
     # enquanto o token atual for "procedimento" ou "função"
+    rotulo = TS.novo_rotulo()
+    auxrot = None
+    flag = 0
+    if token.simbolo == "sprocedimento" or token.simbolo == "sfuncao":
+        auxrot = rotulo
+        gera("","JMP",rotulo,"")
+        rotulo = TS.novo_rotulo()
+        flag = 1
     while token.simbolo == "sprocedimento" or token.simbolo == "sfuncao":
         if token.simbolo == "sprocedimento":
-            token = Analisa_declaracao_procedimento(token, fila_tokens, fila_erros)
+            
+            token = Analisa_declaracao_procedimento(token, fila_tokens, fila_erros,rotulo)
+            
         else:
-            token = Analisa_declaracao_funcao(token, fila_tokens, fila_erros)
+            
+            token = Analisa_declaracao_funcao(token, fila_tokens, fila_erros,rotulo)
 
         # após a declaração, deve vir ponto e vírgula
         if token.simbolo == "spontovirgula":
@@ -274,11 +303,13 @@ def Analisa_subrotinas(token, fila_tokens, fila_erros):
         else:
             erro = Erro("ERRO:esperado ';' após declaração de sub-rotina", "ERRO SINTATICO")
             fila_erros.put(erro)
+    if flag == 1:
+        gera(auxrot,"NULL","","")
 
     return token
 
 
-def Analisa_declaracao_funcao(token, fila_tokens, fila_erros):
+def Analisa_declaracao_funcao(token, fila_tokens, fila_erros,rotulo):
     token = fila_tokens.get()
 
     if token.simbolo == "sidentificador":
@@ -286,11 +317,15 @@ def Analisa_declaracao_funcao(token, fila_tokens, fila_erros):
 
         if not TS.pesquisa_declfunc_tabela(token.lexema):
             # insere a função na tabela de símbolos
-            TS.insere_tabela(token.lexema, "funcao", tipo=None, nivel=None, end=None)
+            TS.insere_tabela(token.lexema, "funcao", tipo=None, nivel=None, end=None,rotulo_1=rotulo)
             # gera um novo rótulo para a geração de código
-            rotulo = TS.novo_rotulo()
+            #rotulo = TS.novo_rotulo()
             # entra em um novo escopo
             TS.enter_scope()
+            end = TS.get_endereco(token.lexema)
+            gera("","ALLOC",end,1)
+            rotulo = TS.get_rotulo(token.lexema)
+            gera(rotulo,"NULL","","")
 
             token = fila_tokens.get()
 
@@ -301,7 +336,7 @@ def Analisa_declaracao_funcao(token, fila_tokens, fila_erros):
                 if token.simbolo == "sinteiro" or token.simbolo == "sbooleano":
                     # atribui o tipo de retorno da função
                     TS.insere_tipo(iden, token.lexema)
-                    
+
                     token = fila_tokens.get()
                     # espera ';'
                     if token.simbolo == "spontovirgula":
@@ -325,7 +360,10 @@ def Analisa_declaracao_funcao(token, fila_tokens, fila_erros):
         fila_erros.put(erro)
 
     # sai do escopo ao fim da função
+    end_ini,end_fim = TS.get_dalloc()
+    gera("","DALLOC",end_fim,end_ini)
     TS.exit_scope()
+    gera("","RETURN","","")
     return token
 
 
@@ -761,8 +799,14 @@ def gera_codigo_posfixa(posfixa, fila_erros):
         if s == "sidentificador":
             if not TS.pesquisa_tabela(t.lexema):
                 fila_erros.put(Erro(f"ERRO: identificador '{t.lexema}' nao declarado", "ERRO SEMANTICO"))
-            endereco = TS.get_endereco(t.lexema)
-            gera("", "LDV", endereco, "")
+            if  TS.get_categoria(t.lexema) == "funcao":
+                rotulo = TS.get_rotulo(t.lexema)
+                end = TS.get_endereco(t.lexema)
+                gera("","CALL",rotulo,"")
+                gera("", "LDV", end, "")
+            else:
+                end = TS.get_endereco(t.lexema)
+                gera("", "LDV", end, "")
             continue
         if s == "snumero":
             gera("", "LDC", t.lexema, "")
