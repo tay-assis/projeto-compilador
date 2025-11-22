@@ -2,7 +2,12 @@ from src.Erro import Erro
 import src.TabelaSimbolos as TS
 from src.Gera import gera
 
+# pilha global para armazenar pares do DALLOC
+pilha_dalloc = []
 _rotulo_counter = 0
+global alloc_counter
+alloc_counter = 1
+
 
 def novo_rotulo():
     """Gera e retorna um novo rótulo (string)."""
@@ -16,18 +21,23 @@ def novo_rotulo():
 rotulo = novo_rotulo()
 
 def Analisa_bloco(token, fila_tokens, fila_erros):
-    token = Analisa_et_variaveis(token, fila_tokens, fila_erros)
+    token,n_allocs = Analisa_et_variaveis(token, fila_tokens, fila_erros)
     token = Analisa_subrotinas(token, fila_tokens, fila_erros)
     token = Analisa_comandos(token, fila_tokens, fila_erros)
+    if n_allocs != 0:
+        dalloc1,dalloc2 = pilha_dalloc.pop()
+        gera("","DALLOC",dalloc1,dalloc2)
     return token
 
 
 def Analisa_et_variaveis(token, fila_tokens, fila_erros):
+    global alloc_counter
+    n_allocs = 0
     if token.simbolo == "svar":
         token = fila_tokens.get()
         if token.simbolo == "sidentificador":
             while token.simbolo == "sidentificador":
-                token = Analisa_Variaveis(token, fila_tokens, fila_erros)
+                token,n_allocs = Analisa_Variaveis(token, fila_tokens, fila_erros,n_allocs)
                 if token.simbolo == "spontovirgula":
                     token = fila_tokens.get()
                 else:
@@ -36,17 +46,23 @@ def Analisa_et_variaveis(token, fila_tokens, fila_erros):
         else:
             erro = Erro("ERRO:etapa de variaveis:esperando identificador", "ERRO SINTATICO")
             fila_erros.put(erro)
-    return token
+        
+        gera("","ALLOC",alloc_counter,n_allocs)
+        pilha_dalloc.append((alloc_counter,n_allocs))
+        alloc_counter += n_allocs
 
 
-def Analisa_Variaveis(token, fila_tokens, fila_erros):
+    return token,n_allocs
+
+
+def Analisa_Variaveis(token, fila_tokens, fila_erros,n_allocs):
     # lista temporária para armazenar variáveis do mesmo tipo
     lista_var = []
-    
     while True:
         if token.simbolo == "sidentificador":
             if not TS.pesquisa_declvar_tabela(token.lexema) or not TS.pesquisa_var_func_tabela_inteira(token.lexema):
                 lista_var.append(token.lexema)
+                n_allocs+= 1
                 TS.insere_tabela(token.lexema, "variavel", tipo=None, nivel=None, end=None,rotulo_1=None)
                 token = fila_tokens.get()
 
@@ -79,15 +95,12 @@ def Analisa_Variaveis(token, fila_tokens, fila_erros):
     if token.simbolo == "sdoispontos":
         token = fila_tokens.get()
         token = Analisa_Tipo(token, fila_tokens, fila_erros, lista_var)
-        end_ini = TS.get_endereco(lista_var[0])
-        end_fim = len(lista_var)
-        gera("","ALLOC",end_ini,end_fim)
         TS.imprimir_tabela()
     else:
         erro = Erro("ERRO: ':' esperado", "ERRO SINTATICO")
         fila_erros.put(erro)
 
-    return token
+    return token,n_allocs
 
 
 def Analisa_Tipo(token, fila_tokens, fila_erros, lista_var):
@@ -110,8 +123,6 @@ def Analisa_comandos(token, fila_tokens, fila_erros):
             token = fila_tokens.get()
             if token.simbolo != "sfim":
                 token = Analisa_comando_simples(token, fila_tokens, fila_erros)
-        end_ini,end_fim = TS.get_dalloc()
-        gera("","DALLOC",end_fim,end_ini)
         token = fila_tokens.get()
     else:
         erro = Erro("ERRO: em declarações apos programa,procedimento ou funcao", "ERRO SINTATICO")
@@ -151,11 +162,11 @@ def Analisa_atrib_chprocedimento(token, fila_tokens, fila_erros):
         elif TS.get_categoria(token.lexema) == "funcao":
             # função: verificar se existe retorno obrigatório
             rotulo_funcao = TS.get_rotulo(token.lexema)
-            gera("","CALL",rotulo_funcao,"")
             tipo_func = TS.get_tipo(token.lexema)
             token = fila_tokens.get()
             if token.simbolo == "satribuicao":
                 token = Analisa_atribuicao(token, fila_tokens, fila_erros, tipo_func)
+                gera("","STR",0,"")
             else:
                 erro = Erro("ERRO:esperado atribuir o retorno da funcao", "ERRO SINTATICO")
                 fila_erros.put(erro)
@@ -311,8 +322,6 @@ def Analisa_declaracao_procedimento(token, fila_tokens, fila_erros):
         fila_erros.put(erro)
 
     # sai do escopo ao fim do procedimento
-    end_ini,end_fim = TS.get_dalloc()
-    #gera("","DALLOC",end_fim,end_ini)
     TS.exit_scope()
     gera("","RETURN","","")
     return token
@@ -358,13 +367,11 @@ def Analisa_declaracao_funcao(token, fila_tokens, fila_erros):
 
         if not TS.pesquisa_declfunc_tabela(token.lexema):
             # insere a função na tabela de símbolos
-            TS.insere_tabela(token.lexema, "funcao", tipo=None, nivel=None, end=None,rotulo_1=rotulo)
+            TS.insere_tabela(token.lexema, "funcao", tipo=None, nivel=None, end=0,rotulo_1=rotulo)
             # gera um novo rótulo para a geração de código
             #rotulo = TS.novo_rotulo()
             # entra em um novo escopo
             TS.enter_scope()
-            end = TS.get_endereco(token.lexema)
-            gera("","ALLOC",end,1)
             rotulo_funcao = TS.get_rotulo(token.lexema)
             gera(rotulo_funcao,"NULL","","")
             rotulo = novo_rotulo()
@@ -402,8 +409,6 @@ def Analisa_declaracao_funcao(token, fila_tokens, fila_erros):
         fila_erros.put(erro)
 
     # sai do escopo ao fim da função
-    #end_ini,end_fim = TS.get_dalloc()
-    #gera("","DALLOC",end_fim,end_ini)
     TS.exit_scope()
     gera("","RETURN","","")
     return token

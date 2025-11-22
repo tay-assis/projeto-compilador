@@ -22,6 +22,7 @@ def AnalisadorSintatico(fila_tokens,fila_erros):
                 # Insere o nome do programa na tabela de símbolos
                 TS.insere_tabela(token.lexema, "nomedeprograma", tipo=None, nivel=None, end=None,rotulo_1=None)
                 gera("","START","","")
+                gera("","ALLOC",0,1)
                 # Inicio o escopo do programa
                 TS.enter_scope() # nível 0
                 
@@ -35,8 +36,8 @@ def AnalisadorSintatico(fila_tokens,fila_erros):
 
                     if token is not None and token.simbolo == "sponto":
                         token = fila_tokens.get()  # consome '.'
+                        gera("","DALLOC",0,1)
                         gera("","HLT","","")
-
                         if token is None:
                             print("[Sintatico] Fim dos tokens. Encerrando.")
                             break

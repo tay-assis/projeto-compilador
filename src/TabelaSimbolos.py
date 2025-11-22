@@ -14,7 +14,7 @@ topo = -1
 nivel_atual = -1   # começa em -1; ao abrir programa deve chamar enter_scope() para nivel 0
 
 # Endereço global
-endereco_global = 0
+endereco_global = 1
 
 # Contador de rótulos (para geração de código)
 
@@ -28,8 +28,7 @@ def resetar_tabela():
     tabela_simbolos.clear()
     topo = -1
     nivel_atual = -1
-    endereco_global = 0
-    _rotulo_counter = 0
+    endereco_global = 1
     print("[TabelaSimbolos] Tabela reiniciada.")
 
 
