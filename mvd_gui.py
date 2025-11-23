@@ -2,9 +2,18 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext
 from typing import List, Dict, Optional
 
-# -----------------------------
-# MVD core (versão com step)
-# -----------------------------
+import subprocess
+import threading
+import shutil
+import os
+
+# Ajuste aqui: nome do script que inicia seu compilador (o arquivo que você executa para compilar .txt)
+# Ex.: "run_compiler.py" ou "main_compiler.py" — coloque o nome correto do seu projeto
+COMPILER_SCRIPT = "main.py"
+
+# pasta onde salvamos os .obj compilados
+OUTPUTS_DIR = os.path.join(os.getcwd(), "outputs")
+os.makedirs(OUTPUTS_DIR, exist_ok=True)
 
 class Instruction:
     def __init__(self, op, args=None):
@@ -329,6 +338,8 @@ class MVDGUI:
         # frames
         top_frame = tk.Frame(root)
         top_frame.pack(fill='x')
+        btn_compile = tk.Button(top_frame, text='Compile .txt', command=self.choose_and_compile)
+        btn_compile.pack(side='left', padx=4, pady=4)
 
         btn_load = tk.Button(top_frame, text='Load .obj', command=self.load_file)
         btn_load.pack(side='left', padx=4, pady=4)
@@ -336,18 +347,8 @@ class MVDGUI:
         btn_reset = tk.Button(top_frame, text='Reset VM', command=self.reset_vm)
         btn_reset.pack(side='left', padx=4)
 
-        self.btn_step = tk.Button(top_frame, text='Step', command=self.on_step)
+        self.btn_step = tk.Button(top_frame, text='Run', command=self.on_step)
         self.btn_step.pack(side='left', padx=4)
-
-        self.btn_run = tk.Button(top_frame, text='Run', command=self.on_run_pause)
-        self.btn_run.pack(side='left', padx=4)
-
-        lbl_interval = tk.Label(top_frame, text='Delay (ms):')
-        lbl_interval.pack(side='left', padx=(12,2))
-        self.run_delay = tk.IntVar(value=200)
-        spin = tk.Spinbox(top_frame, from_=10, to=2000, increment=10, textvariable=self.run_delay, width=6)
-        spin.pack(side='left')
-
         # main panes
         middle = tk.PanedWindow(root, orient='horizontal')
         middle.pack(fill='both', expand=True)
@@ -426,7 +427,6 @@ class MVDGUI:
             return
         self.vm.reset()
         self.auto_running = False
-        self.btn_run.config(text='Run')
         self.update_gui()
         self.lbl_status.config(text='Reset realizado')
 
@@ -457,62 +457,7 @@ class MVDGUI:
 
         self.update_gui()
 
-    def on_run_pause(self):
-        if not self.program_loaded:
-            messagebox.showinfo('Info', 'Nenhum programa carregado')
-            return
-        self.auto_running = not self.auto_running
-        self.btn_run.config(text='Pause' if self.auto_running else 'Run')
-        if self.auto_running:
-            self.lbl_status.config(text='Running...')
-            self._run_loop()
-        else:
-            self.lbl_status.config(text='Paused')
-
-    def _run_loop(self):
-        if not self.auto_running:
-            return
-        if self.vm.halted:
-            self.auto_running = False
-            self.btn_run.config(text='Run')
-            self.lbl_status.config(text='Halted')
-            return
-        if self.vm.waiting_for_input:
-            # pause waiting
-            self.auto_running = False
-            self.btn_run.config(text='Run')
-            self.lbl_status.config(text='Paused (waiting for RD input)')
-            return
-        try:
-            res = self.vm.step()
-        except Exception as e:
-            messagebox.showerror('Erro execução', str(e))
-            self.auto_running = False
-            self.btn_run.config(text='Run')
-            return
-
-        if res == 'prn':
-            val = getattr(self.vm, '_last_prn', None)
-            if val is not None:
-                self.txt_out.insert(tk.END, str(val) + '\n')
-                self.txt_out.see(tk.END)
-        elif res == 'need_input':
-            self.lbl_status.config(text='Aguardando RD (forneça input)')
-            self.auto_running = False
-            self.btn_run.config(text='Run')
-            self.update_gui()
-            return
-        elif res == 'halt':
-            self.lbl_status.config(text='Halted')
-            self.auto_running = False
-            self.btn_run.config(text='Run')
-            messagebox.showinfo('HLT', 'Programa finalizado (HLT)')
-            self.update_gui()
-            return
-
-        self.update_gui()
-        delay = max(10, int(self.run_delay.get()))
-        self.root.after(delay, self._run_loop)
+        
 
     def send_input(self):
         if not self.program_loaded or not self.vm.waiting_for_input:
@@ -558,6 +503,91 @@ class MVDGUI:
             self.lbl_status.config(text='Aguardando RD (forneça input)')
         self.update_gui()
         self.root.after(200, self._periodic_update)
+    
+    def choose_and_compile(self):
+    # abre diálogo para selecionar arquivo .txt e inicia compilação em thread
+        path = filedialog.askopenfilename(filetypes=[('Text files', '*.txt'),('All files','*.*')])
+        if not path:
+            return
+        self.entry_input_file = path  # opcional: guarda
+        # executa em thread para não travar a GUI
+        t = threading.Thread(target=self._run_compile_and_load, args=(path,), daemon=True)
+        t.start()
+
+    def _run_compile_and_load(self, txt_path):
+        self.lbl_status.config(text='Compilando...')
+        try:
+                # chama o compilador como subprocesso externo
+                # ajusta: COMPILER_SCRIPT deve ser o script que inicia seu compilador
+                cmd = [os.environ.get("PYTHON", "python"), COMPILER_SCRIPT, txt_path]
+                # você pode querer passar argumento extra para o compilador; ajuste se necessário
+                proc = subprocess.run(cmd, capture_output=True, text=True, cwd=os.getcwd())
+
+                stdout = proc.stdout or ""
+                stderr = proc.stderr or ""
+
+                base = os.path.splitext(os.path.basename(txt_path))[0]
+                expected_obj = base + ".obj"
+                obj_src = os.path.join(os.getcwd(), expected_obj)
+
+                if proc.returncode != 0:
+                    # compilador falhou — mostra saída e erro
+                    msg = f"Compilador retornou código {proc.returncode}\n\nstdout:\n{stdout}\nstderr:\n{stderr}"
+                    messagebox.showerror("Erro compilação", msg)
+                    self.lbl_status.config(text='Erro na compilação')
+                    return
+
+                # tenta localizar o .obj — primeiro na raiz, senão procura em algumas pastas comuns
+                possible_paths = [obj_src,
+                                os.path.join(os.getcwd(), "outputs", expected_obj),
+                                os.path.join(os.getcwd(), "src", expected_obj)]
+
+                found = None
+                for p in possible_paths:
+                    if os.path.isfile(p):
+                        found = p
+                        break
+
+                if not found:
+                    # não encontrou: mostra aviso com stdout/stderr
+                    msg = "Compilação concluída, mas .obj não foi encontrado.\n\n"
+                    msg += f"Procurado em:\n{possible_paths}\n\nstdout:\n{stdout}\n\nstderr:\n{stderr}"
+                    messagebox.showwarning("Aviso", msg)
+                    self.lbl_status.config(text='Compilação: obj não encontrado')
+                    return
+
+                # move para outputs (sobrescreve se já existir)
+                dst = os.path.join(OUTPUTS_DIR, expected_obj)
+                try:
+                    if os.path.abspath(found) != os.path.abspath(dst):
+                        shutil.move(found, dst)
+                    else:
+                        # já está no lugar
+                        pass
+                except Exception as e:
+                    messagebox.showwarning("Aviso", f"Falha ao mover .obj para outputs: {e}\nUsando arquivo original.")
+                    dst = found
+
+                # agora carregamos o .obj na VM
+                try:
+                    with open(dst, 'r', encoding='utf-8') as f:
+                        text = f.read()
+                    program = parse_obj_text(text)
+                    self.vm = MVDMachine(program)
+                    self.program_loaded = True
+                    self.update_gui()
+                    self.lbl_status.config(text=f'Carregado: {os.path.basename(dst)}')
+                    messagebox.showinfo("OK", f".obj carregado na VM: {dst}")
+                except Exception as e:
+                    messagebox.showerror("Erro ao carregar .obj", str(e))
+                    self.lbl_status.config(text='Erro ao carregar .obj')
+                    return
+        except Exception as e:
+            messagebox.showerror("Erro ao iniciar o Compilador", str(e))
+
+        
+
+            
 
 # -----------------------------
 # main

@@ -1,7 +1,0 @@
-programa erro_var_nao_decl;
-
-var a: inteiro;
-
-inicio
-    b := 10
-fim.

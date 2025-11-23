@@ -1,2 +1,4 @@
 # Ignorar pastas __pycache__ dentro de src
 /src/__pycache__/
+/outputs/*
+*.obj

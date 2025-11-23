@@ -1,3 +1,13 @@
+import os
+
+
+arquivo_saida = "out.obj"   # valor padrão
+
+def configura_saida(nome):
+    global arquivo_saida
+    arquivo_saida = nome
+    
+
 def gera(rotulo, opcode, valor="", velor2=""):
     # monta a linha
     parts = [] #lista com os componentes da instrução
@@ -13,5 +23,5 @@ def gera(rotulo, opcode, valor="", velor2=""):
     linha = " ".join(parts) + "\n" #separa os componentes e pula a linha
 
     # abre o arquivo em modo append (acrescentar)
-    with open("out.obj", "a", encoding="utf-8") as f:
+    with open(arquivo_saida, "a", encoding="utf-8") as f:
         f.write(linha)
