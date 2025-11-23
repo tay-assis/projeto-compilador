@@ -1,7 +1,0 @@
-programa erro_tipo;
-
-var a: flutuante;
-
-inicio
-    a := 10
-fim.

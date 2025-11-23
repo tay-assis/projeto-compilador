@@ -1,7 +1,0 @@
-programa erro_var_dup;
-
-var x, y, x: inteiro;
-
-inicio
-    x := 1
-fim.

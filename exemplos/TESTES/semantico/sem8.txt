@@ -1,8 +1,0 @@
-{Variável declarada duas vezes}
-programa erro_var_dup;
-
-var x, y, x: inteiro;   {ERRO: x duplicada}
-
-inicio
-    x := 1
-fim.

@@ -1,8 +1,0 @@
-{Tipo inválido}
-programa erro_tipo;
-
-var a: flutuante;    {ERRO: tipo não reconhecido}
-
-inicio
-    a := 10
-fim.
