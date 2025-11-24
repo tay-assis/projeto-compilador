@@ -90,7 +90,6 @@ def trata_op_relacional(posicao_atual,conteudo):
             # igualdade
             return Token("=", "sig")
 
-        # fallback (não deve chegar aqui)
         return Token(c, "ERRO")
 
 def trata_pontuacao(posicao_atual,conteudo):
