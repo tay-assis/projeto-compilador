@@ -22,6 +22,6 @@ def gera(rotulo, opcode, valor="", velor2=""):
 
     linha = " ".join(parts) + "\n" #separa os componentes e pula a linha
 
-    # abre o arquivo em modo append (acrescentar)
+    # abre o arquivo em modo append (acrescentar não subescrever)
     with open(arquivo_saida, "a", encoding="utf-8") as f:
         f.write(linha)

@@ -261,32 +261,45 @@ def Analisa_enquanto(token, fila_tokens, fila_erros):
 
 def Analisa_se(token, fila_tokens, fila_erros):
     global rotulo
-    auxrot1 = None
-    auxrot2 = None
+
+    # consome o 'se'
     token = fila_tokens.get()
-    # analisa a expressão condicional
+
+    # analisa a expressão condicional (pode aceitar inteiro ou booleano)
     token = Analisa_expressao(token, fila_tokens, fila_erros, ["inteiro", "booleano"])
 
-    if token.simbolo == "sentao":
-        auxrot1 = rotulo
-        gera("", "JMPF", rotulo, "")
-        rotulo = novo_rotulo()
+    # espera 'entao'
+    if token.simbolo != "sentao":
+        erro = Erro("ERRO: esperado 'entao' apos expressao no 'se'", "ERRO SINTATICO")
+        fila_erros.put(erro)
+        return token
+
+    # cria rótulo do início do 'senao' (caso exista) e rótulo do fim do if
+    dest_else = novo_rotulo()
+    dest_end  = novo_rotulo()
+
+    # gera salto condicional para o 'senao' (se falso, vai para dest_else)
+    gera("", "JMPF", dest_else, "")
+
+    # consome 'entao' e analisa comando do entao
+    token = fila_tokens.get()
+    token = Analisa_comando_simples(token, fila_tokens, fila_erros)
+
+  
+    gera("", "JMP", dest_end, "")
+
+    # coloca label do início do 'senao'
+    gera(dest_else, "NULL", "", "")
+
+    # verifica se existe 'senao'
+    if token.simbolo == "senao" or token.simbolo == "ssenao" or token.simbolo == "ssenão":
+        # consome 'senao' e analisa comando do else
         token = fila_tokens.get()
         token = Analisa_comando_simples(token, fila_tokens, fila_erros)
 
-        if token.simbolo == "ssenão":
-            auxrot2 = rotulo
-            gera("", "JMPF", rotulo, "")
-            rotulo = novo_rotulo()
-            gera(auxrot1, "NULL", "", "")
-            token = fila_tokens.get()
-            token = Analisa_comando_simples(token, fila_tokens, fila_erros)
-            gera(auxrot2, "NULL", "", "")
-        else:
-            gera(auxrot1, "NULL", "", "")
-    else:
-        erro = Erro("ERRO:esperado 'entao' após expressão no 'se'", "ERRO SINTATICO")
-        fila_erros.put(erro)
+    #coloca o label do fim do if
+    gera(dest_end, "NULL", "", "")
+
     return token
 
 
@@ -552,7 +565,7 @@ def Converte_expressao_para_posfixa(token, fila_tokens, fila_erros):
         "smenorig": (0, 'L'),
         "sdif": (0, 'L'),
     }
-    # símbolos que podem aparecer numa expressão (operandos / operadores / parênteses)
+    # símbolos que podem aparecer numa expressão 
     operandos = {"sidentificador", "snumero", "sverdadeiro", "sfalso"}
     operadores_simbolos = set(operadores.keys()).union({"smais", "smenos", "smult", "sdiv", "sou", "se", "smaior","smaiorig","sig","smenor","smenorig","sdif","snao"})
     parenteses_abre = "sabre_parenteses"
@@ -568,7 +581,7 @@ def Converte_expressao_para_posfixa(token, fila_tokens, fila_erros):
         s = t.simbolo
         return s in operandos or s in operadores_simbolos or s in (parenteses_abre, parenteses_fecha)
 
-    prev_was_operand = False  # usado para detectar operadores unários (+/-) e 'snao'
+    prev_was_operand = False  # detectar operadores unários (+/-) e 'snao'
 
     # processa tokens até encontrar algo que não pertença à expressão
     while token is not None and is_expr_symbol(token):
@@ -605,11 +618,9 @@ def Converte_expressao_para_posfixa(token, fila_tokens, fila_erros):
             if not prev_was_operand:
                 # trata como unário
                 s_un = "uplus" if s == "smais" else "uminus"
-                # crie um "token fictício" para o operador unário - podemos reusar o token e alterar simbolo
-                # mas para não mutar original, criamos um pequeno wrapper objeto usando uma cópia superficial
                 token_un = token
                 token_un.simbolo = s_un
-                # use operadores map para precedencia (já definimos uplus/uminus)
+
                 op_sym = s_un
                 # shunting-yard: processa baseado em precedencia/associatividade
                 while stack and stack[-1].simbolo in operadores and (
@@ -626,13 +637,12 @@ def Converte_expressao_para_posfixa(token, fila_tokens, fila_erros):
                 op_sym = s
         elif s == "snao":
             # 'nao' é sempre unário
-            # usamos diretamente token (mas preferível marcar unário)
             op_sym = "snao"
         else:
-            # outros operadores (binarios): smult, sdiv, se, sou, relacionais
+
             op_sym = s
 
-        # shunting-yard: enquanto topo da pilha tem operador com maior precedencia (ou igual e left assoc) -> pop para output
+        #enquanto topo da pilha tem operador com maior precedencia (ou igual e left assoc) pop para output
         while stack and stack[-1].simbolo not in (parenteses_abre,):
             top_sym = stack[-1].simbolo
             if top_sym not in operadores:
@@ -644,7 +654,7 @@ def Converte_expressao_para_posfixa(token, fila_tokens, fila_erros):
             else:
                 break
 
-        # empilha o operador atual (usar o token atual -> mas atenção, se mudou para uplus/uminus já tratamos antes)
+        # empilha o operador atual
         stack.append(token)
         prev_was_operand = False
         token = fila_tokens.get()
@@ -661,19 +671,9 @@ def Converte_expressao_para_posfixa(token, fila_tokens, fila_erros):
     return token, output
 
 
-# Verificação de tipos simples a partir de uma lista pós-fixa
-# posfixa: lista de tokens (na ordem pós-fixa)
-# var_tipo: tipo esperado (ou None se não houver expectativa)
-# usa TS como na sua base para identificar tipos de identificadores
+
 def Verifica_tipo_posfixa(posfixa, fila_erros, var_tipo=None):
-    """
-    Verifica tipos a partir de uma lista posfixa.
-    var_tipo pode ser:
-      - None -> sem expectativa
-      - string -> "inteiro" ou "booleano"
-      - list/tuple -> ["inteiro","booleano"]
-      - string contendo representação de lista -> "['inteiro','booleano']"
-    """
+
     stack_tipos = []
 
     def tipo_do_token(t):
@@ -693,7 +693,7 @@ def Verifica_tipo_posfixa(posfixa, fila_erros, var_tipo=None):
         # None -> None
         if vt is None:
             return None
-        # já é lista/tupla -> transformar em lista
+        # já é lista/tupla transformar em lista
         if isinstance(vt, (list, tuple)):
             return list(vt)
         # se for string que representa lista, tentar parsear
@@ -713,8 +713,7 @@ def Verifica_tipo_posfixa(posfixa, fila_erros, var_tipo=None):
 
     var_tipo_norm = normalize_var_tipo(var_tipo)
 
-    # opcional: debug
-    # print(f"[DEBUG] var_tipo original={var_tipo!r}, normalized={var_tipo_norm!r}")
+
 
     for t in posfixa:
         s = t.simbolo
@@ -731,7 +730,7 @@ def Verifica_tipo_posfixa(posfixa, fila_erros, var_tipo=None):
                 continue
             operand = stack_tipos.pop()
             if operand is None:
-                # já foi reportado (ex: identificador nao declarado) - apenas empilha None para continuar
+
                 stack_tipos.append(None)
                 continue
             if s == "snao":
@@ -801,16 +800,16 @@ def Verifica_tipo_posfixa(posfixa, fila_erros, var_tipo=None):
 
     # função auxiliar que compara final_tipo com var_tipo_norm
     def tipos_conferem(ft, vt):
-        # se sem expectativa -> ok
+      
         if vt is None:
             return True
-        # se final é None (erro anterior) -> não conferir aqui, já reportado; trate como False para evitar mensagens redundantes
+
         if ft is None:
             return False
-        # vt é lista -> checar membership
+        # vt é lista checar membership
         if isinstance(vt, (list, tuple)):
             return ft in vt
-        # vt é string -> comparar direto
+        # vt é string  comparar direto
         return ft == vt
 
     if var_tipo_norm is not None and final_tipo is not None and not tipos_conferem(final_tipo, var_tipo_norm):
@@ -823,65 +822,74 @@ def gera_codigo_posfixa(posfixa, fila_erros):
     bin_ops = {
         "smais": "ADD",
         "smenos": "SUB",
-        "smult": "MUL",
-        "sdiv": "DIV",
-        "se": "AND",    # 'e' lógico
-        "sou": "OR",    # 'ou' lógico
-        # relacionais: podem retornar booleano (1/0)
+        "smult": "MULT",
+        "sdiv": "DIVI",
+        "se": "AND",
+        "sou": "OR",
         "smaior": "CMA",
         "smaiorig": "CMAQ",
+        "sig": "CEQ",    
         "sigual": "CEQ",
         "smenor": "CME",
         "smenorig": "CMEQ",
         "sdif": "CDIF",
-          # 'nao' lógico -> NOT
     }
     un_ops = {
-        "uplus": None,   # + unário (não gera nada além de garantir tipo) -> não precisa de instrução
-        "uminus": "NEG", # - unário -> NEG (0 - x) ou opcode NEG se suportado
-        "snao": "NEG", 
+        "uplus": None,
+        "uminus": "INV",
+        "snao": "NEG",
     }
-    # percorre a posfixa e emite instrucoes
     for t in posfixa:
         s = t.simbolo
-        # operandos
+        # literais booleanas
+        if s == "sverdadeiro":
+            gera("", "LDC", 1, "")
+            continue
+        if s == "sfalso":
+            gera("", "LDC", 0, "")
+            continue
+        # identificador (variavel ou funcao)
         if s == "sidentificador":
             if not TS.pesquisa_tabela(t.lexema):
                 fila_erros.put(Erro(f"ERRO: identificador '{t.lexema}' nao declarado", "ERRO SEMANTICO"))
-            if  TS.get_categoria(t.lexema) == "funcao":
+
+                gera("", "LDC", 0, "")
+                continue
+
+            if TS.get_categoria(t.lexema) == "funcao":
                 rotulo_funcao = TS.get_rotulo(t.lexema)
                 end = TS.get_endereco(t.lexema)
-                gera("","CALL",rotulo_funcao,"")
+                gera("", "CALL", rotulo_funcao, "")
                 gera("", "LDV", end, "")
             else:
                 end = TS.get_endereco(t.lexema)
                 gera("", "LDV", end, "")
             continue
+
+        # número
         if s == "snumero":
             gera("", "LDC", t.lexema, "")
             continue
-        # operadores unarios
+
+        # operadores unários
         if s in un_ops:
             opcode = un_ops[s]
             if opcode is None:
-                # + unário: não precisa gerar instrução (por convenção), apenas ignora
-                # se quiser forçar, pode gerar LDC 0 / SUB etc.
+                # + unário: nada a gerar
                 continue
             else:
-                # gera uma instrucao que opere no topo da pilha
-                # exemplo: NEG (nega o topo), NOT (inverte bit lógico do topo)
                 gera("", opcode, "", "")
             continue
-        # operadores binarios
+
+        # operadores binários
         if s in bin_ops:
             opcode = bin_ops[s]
-            # em arquitetura de pilha, os dois operandos já foram carregados pela posfixa,
-            # então só emitimos a instrucao que consome 2 valores e empilha o resultado.
             gera("", opcode, "", "")
             continue
 
-        # caso nao mapeado
+        # caso não mapeado
         fila_erros.put(Erro(f"ERRO: operador/desconhecido na posfixa '{s}'", "ERRO SEMANTICO"))
+
 
 
 
