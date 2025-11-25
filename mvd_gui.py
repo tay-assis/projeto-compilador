@@ -7,8 +7,7 @@ import threading
 import shutil
 import os
 
-# Ajuste aqui: nome do script que inicia seu compilador (o arquivo que você executa para compilar .txt)
-# Ex.: "run_compiler.py" ou "main_compiler.py" — coloque o nome correto do seu projeto
+
 COMPILER_SCRIPT = "main.py"
 
 # pasta onde salvamos os .obj compilados
@@ -17,8 +16,8 @@ os.makedirs(OUTPUTS_DIR, exist_ok=True)
 
 class Instruction:
     def __init__(self, op, args=None):
-        self.op = op                # Nome da instrução (ex: ADD, LDC, ALLOC)
-        self.args = args or []      # Lista de argumentos (ex: [0, 3])
+        self.op = op                # Nome da instrução ( ADD, LDC, ALLOC)
+        self.args = args or []      # Lista de argumentos
 
     def __repr__(self):             # exibe instrução na inferfacie de usuario
         if self.args:
@@ -51,12 +50,7 @@ class MVDMachine:
         self.M[addr] = int(value)
 
     def step(self) -> str:
-        """Executa uma instrução. Retorna:
-        - 'ok' se executou normalmente e continua
-        - 'halt' se encontrou HLT
-        - 'need_input' se encontrou RD e precisa de valor
-        - 'prn' se imprimiu um valor (valor em self._last_prn)
-        """
+   
         if self.halted:
             return 'halt'
 
@@ -68,7 +62,7 @@ class MVDMachine:
         op = instr.op
         a = instr.args  # lista de argumentos posicionais
 
-        # por padrão, próxima instrução
+        #próxima instrução
         next_i = self.i + 1
 
         # START
@@ -223,9 +217,7 @@ class MVDMachine:
 
 
     def provide_input(self, val: int):
-        """Fornece valor para a instrução RD previamente encontrada.
-        Após chamar, a máquina avança i normalmente.
-        """
+ 
         if not self.waiting_for_input:
             raise RuntimeError('Máquina não está aguardando input')
         self.s += 1
@@ -248,16 +240,14 @@ class MVDMachine:
         next_i = self.i + 1
 
            
-# -----------------------------
-# Parser
-# -----------------------------
+
 
 def parse_obj_text(text: str): #tranforma o obj em instrucoes
     lines = text.splitlines()
     raw_lines = []
     label_to_addr = {}
     pc = 0
-    # 1ª passada: detectar labels e endereços (agora mais robusta)
+    #detectar labels e endereços
     for original_line in lines:
         line = original_line.strip()
         tokens = line.split() #separa labels, opcodes e args
@@ -269,32 +259,32 @@ def parse_obj_text(text: str): #tranforma o obj em instrucoes
         opcode = None
         arg_text = ''
 
-        # Caso 1: label seguido de NULL -> "2 NULL"
+        #label seguido de NULL
         if len(tokens) > 1 and tokens[1] == "NULL":
             label = tokens[0]        # a label
             opcode = "NULL"          # o opcode REAL
             arg_text = ""            # sem argumentos
-        # Caso 2: opcode sozinho (ex: "START" ou "HLT")
+        #opcode sozinho
         elif len(tokens) == 1:
             tok = tokens[0]
             opcode = tok
             arg_text = ''
-        # Caso 3: linha que começa com opcode (normal)
+        #linha que começa com opcode
         else:
             opcode = tokens[0]
             arg_text = ' '.join(tokens[1:])
 
-        # addr aponta para a próxima instrução (ou para a instrução atual, caso exista)
+        # addr aponta para a próxima instrução ou para a instrução atual
         addr = pc
         pc += 1
 
         if label is not None:
-            # mapeia label -> endereço (endereço da próxima instrução)
+            # mapeia label para i endereço
             label_to_addr[label] = addr
 
         raw_lines.append((label, opcode, arg_text, addr))
 
-    # 2ª passada: construir instruções a partir de raw_lines
+    # constroi instruções a partir de raw_lines
     program = []
 
     for (label, opcode, arg_text, addr) in raw_lines:
@@ -302,22 +292,22 @@ def parse_obj_text(text: str): #tranforma o obj em instrucoes
         args = []
         text_args = arg_text.strip()
 
-        # Função simples: extrai inteiros na ordem
+        # extrai inteiros na ordem
         def extract_ints(t):
             return [int(x) for x in t.split()]
         
-        # ---- Instruções com labels ----
+        #Instruções com labels
         if op in ("JMP", "JMPF", "CALL"):
             lbl = text_args.split()[0]            # nome da label
             args = [label_to_addr[lbl]]           # coloca o endereço resolvido na lista
 
-        # ---- Instruções numéricas ----
+        #Instruções numéricas
         elif op in ("LDC", "LDV", "STR","ALLOC", "DALLOC"):
             args = extract_ints(text_args) 
 
-        # ---- Instruções sem argumentos ----
+        #Instruções sem argumentos
         else:
-            args = []                              # ex: ADD, MULT, HLT, RETURN, START
+            args = []                        
 
         program.append(Instruction(op=op, args=args))
 
@@ -326,9 +316,7 @@ def parse_obj_text(text: str): #tranforma o obj em instrucoes
 
    
 
-# -----------------------------
-# GUI
-# -----------------------------
+
 
 class MVDGUI:
     def __init__(self, root):
@@ -360,7 +348,7 @@ class MVDGUI:
         self.txt_prog = scrolledtext.ScrolledText(left, width=60, height=25)
         self.txt_prog.pack(fill='both', expand=True)
 
-        # direita: estado e IO
+        # estado e IO
         right = tk.Frame(middle)
         middle.add(right, minsize=300)
 
@@ -395,12 +383,11 @@ class MVDGUI:
         self.lbl_status = tk.Label(status_frame, text='Status: idle')
         self.lbl_status.pack(anchor='w')
 
-        # VM internal
         self.vm: Optional[MVDMachine] = None
         self.program_loaded = False
         self.auto_running = False
 
-        # polling
+     
         self.root.after(200, self._periodic_update)
 
     def load_file(self):
@@ -505,12 +492,12 @@ class MVDGUI:
         self.root.after(200, self._periodic_update)
     
     def choose_and_compile(self):
-    # abre diálogo para selecionar arquivo .txt e inicia compilação em thread
+ 
         path = filedialog.askopenfilename(filetypes=[('Text files', '*.txt'),('All files','*.*')])
         if not path:
             return
-        self.entry_input_file = path  # opcional: guarda
-        # executa em thread para não travar a GUI
+        self.entry_input_file = path 
+
         t = threading.Thread(target=self._run_compile_and_load, args=(path,), daemon=True)
         t.start()
 
@@ -518,9 +505,9 @@ class MVDGUI:
         self.lbl_status.config(text='Compilando...')
         try:
                 # chama o compilador como subprocesso externo
-                # ajusta: COMPILER_SCRIPT deve ser o script que inicia seu compilador
+               
                 cmd = [os.environ.get("PYTHON", "python"), COMPILER_SCRIPT, txt_path]
-                # você pode querer passar argumento extra para o compilador; ajuste se necessário
+                
                 proc = subprocess.run(cmd, capture_output=True, text=True, cwd=os.getcwd())
 
                 stdout = proc.stdout or ""
@@ -537,7 +524,7 @@ class MVDGUI:
                     self.lbl_status.config(text='Erro na compilação')
                     return
 
-                # tenta localizar o .obj — primeiro na raiz, senão procura em algumas pastas comuns
+ 
                 possible_paths = [obj_src,
                                 os.path.join(os.getcwd(), "outputs", expected_obj),
                                 os.path.join(os.getcwd(), "src", expected_obj)]
@@ -588,10 +575,6 @@ class MVDGUI:
         
 
             
-
-# -----------------------------
-# main
-# -----------------------------
 
 def main():
     root = tk.Tk()

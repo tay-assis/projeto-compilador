@@ -61,7 +61,7 @@ def insere_tabela(lexema, categoria, tipo=None, nivel=None, end=None,rotulo_1=No
     if categoria == "variavel":
         end = endereco_global
         endereco_global += 1
-        print(f"[Semantico] Atribuido endereco {end} para variavel '{lexema}' no nivel {nivel}")
+      #  print(f"[Semantico] Atribuido endereco {end} para variavel '{lexema}' no nivel {nivel}")
     # Para função retorna o rótulo diretamente e adiciona o endereço da função na tabela
     elif categoria == "funcao":
         if end is None:
@@ -85,7 +85,7 @@ def insere_tabela(lexema, categoria, tipo=None, nivel=None, end=None,rotulo_1=No
 
     tabela_simbolos.append(simbolo)
     topo += 1
-    print(f"[TabelaSimbolos] Inserido: {simbolo}")
+   # print(f"[TabelaSimbolos] Inserido: {simbolo}")
 
 
 
@@ -96,7 +96,7 @@ def pop_simbolo():
     if topo >= 0:
         removido = tabela_simbolos.pop()
         topo -= 1
-        print(f"[TabelaSimbolos] Removido: {removido}")
+       # print(f"[TabelaSimbolos] Removido: {removido}")
         return removido
     return None
 
@@ -131,7 +131,7 @@ def pesquisa_declvar_tabela(lexema):
         if simbolo["categoria"] == "marcador":
             return False
         if simbolo["lexema"] == lexema and simbolo["categoria"] == "variavel":
-            print(f"[Semantico] pesquisa_declvar_tabela: '{lexema}' ja declarado neste bloco.")
+            #print(f"[Semantico] pesquisa_declvar_tabela: '{lexema}' ja declarado neste bloco.")
             return True
     return False
 
@@ -149,7 +149,7 @@ def pesquisa_declfunc_tabela(lexema):
  
     for simbolo in reversed(tabela_simbolos):
         if simbolo["lexema"] == lexema and simbolo["categoria"] == "funcao":
-            print(f"[Semantico] funcao '{lexema}' ja declarada neste bloco.")
+          #  print(f"[Semantico] funcao '{lexema}' ja declarada neste bloco.")
             return True
     return False
 
@@ -158,16 +158,16 @@ def pesquisa_tabela(lexema):
  
     for simbolo in reversed(tabela_simbolos):
         if simbolo["lexema"] == lexema:
-            print(f"[Semantico] pesquisa_tabela: encontrado {simbolo}")
+            #print(f"[Semantico] pesquisa_tabela: encontrado {simbolo}")
             return simbolo
-    print(f"[Semantico] pesquisa_tabela: '{lexema}' nao encontrado.")
+   # print(f"[Semantico] pesquisa_tabela: '{lexema}' nao encontrado.")
     return None
 
 def pesquisa_var_func_tabela_inteira(lexema):
 
     for simbolo in reversed(tabela_simbolos):
         if simbolo["lexema"] == lexema and simbolo["categoria"] == "variavel":
-            print(f"[Semantico] pesquisa_var_func_tabela_inteira: '{lexema}' ja declarado.")
+         #   print(f"[Semantico] pesquisa_var_func_tabela_inteira: '{lexema}' ja declarado.")
             return True
         if simbolo["lexema"] == lexema and simbolo["categoria"] != "funcao":
             return True
@@ -184,7 +184,7 @@ def atribuir_tipo_variaveis(lista_vars, tipo):
         for simbolo in reversed(tabela_simbolos):
             if simbolo["lexema"] == var and simbolo["categoria"] == "variavel":
                 simbolo["tipo"] = tipo
-                print(f"[Semantico] Tipo de '{var}' atualizado para '{tipo}'")
+                #print(f"[Semantico] Tipo de '{var}' atualizado para '{tipo}'")
                 atualizado = True
                 break
         if not atualizado:
@@ -198,13 +198,13 @@ def insere_tipo(lexema, tipo):
             simbolo["tipo"] = tipo
             print(f"[Semantico] insere_tipo: tipo atualizado: {simbolo}")
             return
-    print(f"[Semantico] insere_tipo: simbolo '{lexema}' nao encontrado.")
+   # print(f"[Semantico] insere_tipo: simbolo '{lexema}' nao encontrado.")
 
 def verifica_tipo(lexema, tipo_esperado):
 
     simbolo = pesquisa_tabela(lexema)
     if simbolo is None:
-        print(f"[Semantico] verifica_tipo: simbolo '{lexema}' nao encontrado.")
+       # print(f"[Semantico] verifica_tipo: simbolo '{lexema}' nao encontrado.")
         return False
 
     tipo_real = simbolo["tipo"]
@@ -212,18 +212,18 @@ def verifica_tipo(lexema, tipo_esperado):
     # Se tipo_esperado for lista  aceitar qualquer um
     if isinstance(tipo_esperado, list):
         if tipo_real in tipo_esperado:
-            print(f"[Semantico] verifica_tipo: tipo de '{lexema}' = '{tipo_real}' confere com um dos tipos permitidos {tipo_esperado}.")
+           # print(f"[Semantico] verifica_tipo: tipo de '{lexema}' = '{tipo_real}' confere com um dos tipos permitidos {tipo_esperado}.")
             return True
         else:
-            print(f"[Semantico] verifica_tipo: tipo de '{lexema}' = '{tipo_real}' NAO confere com nenhum dos tipos permitidos {tipo_esperado}.")
+           # print(f"[Semantico] verifica_tipo: tipo de '{lexema}' = '{tipo_real}' NAO confere com nenhum dos tipos permitidos {tipo_esperado}.")
             return False
 
     # Caso contrário  comparação normal
     if tipo_real == tipo_esperado:
-        print(f"[Semantico] verifica_tipo: tipo de '{lexema}' confere com '{tipo_esperado}'.")
+        #print(f"[Semantico] verifica_tipo: tipo de '{lexema}' confere com '{tipo_esperado}'.")
         return True
     else:
-        print(f"[Semantico] verifica_tipo: tipo de '{lexema}' ('{tipo_real}') NAO confere com '{tipo_esperado}'.")
+        #print(f"[Semantico] verifica_tipo: tipo de '{lexema}' ('{tipo_real}') NAO confere com '{tipo_esperado}'.")
         return False
 
     
